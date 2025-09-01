@@ -85,7 +85,7 @@ int main() {
 
 ## 3. Machine Code Size
 
-### `callback.hpp`
+### `sy_callback.hpp`
 
 | Type         | Member same class | Member different class | Global               | Arbitrary callable | Different signature |
 | ------------ | ----------------- | ---------------------- | -------------------- | ------------------ | ------------------- |
@@ -107,7 +107,7 @@ int main() {
 
 ## 4. Compile Time (1000 callbacks)
 
-### `callback.hpp`
+### `sy_callback.hpp`
 
 | Type                                        | Time      | Code size (bytes) |
 | ------------------------------------------- | --------- | ----------------- |
