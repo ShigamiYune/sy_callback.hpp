@@ -164,6 +164,10 @@ struct Functor {
 int main() {
     MyClass my_class;
 
+    sy_callback::callback<void(int,int)> cb_member = 
+        sy_callback::callback<void(int,int)>::make<MyClass, &MyClass::compare>(&my_class);
+    cb_member(2, 2);
+
     sy_callback::callback<void(int,int)> cb_global = global;
     cb_global(1, 2);
 
