@@ -194,6 +194,22 @@ namespace sy_callback {
             other._life   = &life_nothing;
         }
 
+        template<
+        typename ANY_T,
+        typename = typename std::enable_if<
+            !std::is_same<typename std::decay<ANY_T>::type, callback>::value &&
+            is_invocable_r<ANY_T, RETURN, ARGS...>::value
+        >::type >
+        callback(ANY_T&& func) {
+            using T = typename std::decay<ANY_T>::type;
+
+            _object = reinterpret_cast<std::uintptr_t>(
+                new T(std::forward<ANY_T>(func))
+            );
+            _invoke = &invoke_any<T>;
+            _life   = &life_any<T>;
+        }
+
         ~callback() { 
             _life(type_key::destroy, _object);
             _object = 0;
@@ -424,14 +440,14 @@ namespace sy_callback {
             return callback;
         }
 #endif
-        template<RETURN(*FUNC)(ARGS...)>
+       template<RETURN(*FUNC)(ARGS...)>
         static callback<RETURN(ARGS...)> make() {
             callback<RETURN(ARGS...)> callback;
             callback._object    = reinterpret_cast<std::uintptr_t>(FUNC);
             callback._invoke    = &invoke_global<FUNC>;
             callback._life      = &life_global;
             return callback;
-        }
+        } 
 #if __cplusplus >= 201703L
         template<RETURN(*FUNC)(ARGS...) noexcept>
         static callback<RETURN(ARGS...)> make() {
@@ -451,6 +467,26 @@ namespace sy_callback {
             callback._invoke    = &invoke_any<typename std::decay<ANY_T>::type>;
             callback._life      = &life_any<typename std::decay<ANY_T>::type>;
             return callback;
+        }
+
+        template<typename ANY_T>
+        typename std::enable_if<
+            is_invocable_r<ANY_T, RETURN, ARGS...>::value &&
+            !std::is_same<callback, typename std::decay<ANY_T>::type>::value,
+        callback&>::type
+        operator=(const callback& other) {
+            if (this == &other || other._life == &life_nothing) return *this;
+
+            std::uintptr_t object = other._life(type_key::copy, other._object);
+            assert(object != 0 && "Callback object is not copyable!");
+
+            if(_life != &life_nothing) _life(type_key::destroy, _object);
+
+            _object = object;
+            _invoke = other._invoke;
+            _life   = other._life;
+
+            return *this;
         }
 
         callback& operator=(const callback& other) {
