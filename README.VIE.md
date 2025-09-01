@@ -81,7 +81,7 @@ int main() {
 
 ## 3. Kích thước mã máy
 
-### `callback.hpp`
+### `sy_callback.hpp`
 
 | Loại | Member cùng class | Member khác class | Global | Callable bất kỳ | Signature khác nhau |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -103,7 +103,7 @@ int main() {
 
 ## 4. Thời gian biên dịch (1000 callback)
 
-### `callback.hpp`
+### `sy_callback.hpp`
 
 | Loại | Thời gian | Kích thước mã (byte) |
 | --- | --- | --- |
