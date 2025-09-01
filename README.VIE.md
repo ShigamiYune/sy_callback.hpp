@@ -83,9 +83,9 @@ int main() {
 
 ### `callback.hpp`
 
-| Loại | Member cùng class | Member khác class | Global | Callable bất kỳ | Signature khác nhau |  |
+| Loại | Member cùng class | Member khác class | Global | Callable bất kỳ | Signature khác nhau |
 | --- | --- | --- | --- | --- | --- | --- |
-| Kích thước (byte) | 1008  | 1312  | 560 → 32 (với heap) | 654 | 1200 |  |
+| Kích thước (byte) | 1008  | 1312  | 560 → 32 (với heap) | 654 | 1200 |
 
 ### `std::function`
 
