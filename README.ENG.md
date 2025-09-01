@@ -54,7 +54,7 @@ int main() {
 * A class wrapper for callbacks, storing **2 pointers to 2 static functions** and **8 bytes for the object address**.
 * Supports:
 
-  * **Static functions**, **member functions**, **global functions**, **capturing lambdas**, **template functors** (non-class templates), or any callable.
+  * **Static functions**, **member functions**, **global functions**, **capturing lambdas**, or any callable.
   * **Copy** and **move**.
 * **Size**:
 
