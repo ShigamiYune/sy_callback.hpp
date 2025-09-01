@@ -51,7 +51,7 @@ int main() {
 
 - Là class bọc các callback, lưu **2 con trỏ đến 2 hàm tĩnh** và **8 byte để lưu địa chỉ object**.
 - Hỗ trợ:
-    - Hàm **tĩnh**, **member**, **global**, **lambda có capture**, **template functor** (không phải class template), hoặc bất cứ callable nào.
+    - Hàm **tĩnh**, **member**, **global**, **lambda có capture**, hoặc bất cứ callable nào có thể gọi được.
     - **Copy** và **move**.
 - **Kích thước**:
     - 24 byte cho member và global.
