@@ -70,7 +70,7 @@ namespace sy_callback {
         };
 
         using func_invoke_t = RETURN(*)(const std::uintptr_t&, ARGS...);
-        using func_life_t = std::uintptr_t(*)(type_key, const std::uintptr_t&, const void*);
+        using func_life_t = std::uintptr_t(*)(type_key, const std::uintptr_t&);
 
         std::uintptr_t _object;
         func_invoke_t _invoke;    
@@ -127,7 +127,7 @@ namespace sy_callback {
         }
         
         // LIFE MEMBER ------------------------------------------------------------------
-        static std::uintptr_t life_member(type_key type, const std::uintptr_t& object, const void* key_ptr) {
+        static std::uintptr_t life_member(type_key type, const std::uintptr_t& object) {
             return object;
         }        
                 
@@ -137,7 +137,7 @@ namespace sy_callback {
             return (*FUNC)(args...);
         }
         // INVOKE LIFE ------------------------------------------------------------------
-        static std::uintptr_t life_global(type_key type, const std::uintptr_t& object, const void* key_ptr) {
+        static std::uintptr_t life_global(type_key type, const std::uintptr_t& object) {
             return object;
         }     
 #if __cplusplus >= 201703L
@@ -151,7 +151,7 @@ namespace sy_callback {
             return (*reinterpret_cast<ANY_T*>(object))(args...);
         }
         template<typename ANY_T>
-        static std::uintptr_t life_any(type_key type, const std::uintptr_t& object, const void* key_ptr) {    
+        static std::uintptr_t life_any(type_key type, const std::uintptr_t& object) {    
             if (type == type_key::copy) {
                 if (!std::is_copy_constructible<ANY_T>::value) return 0;
 
@@ -165,7 +165,7 @@ namespace sy_callback {
 
         static RETURN invoke_nothing(const std::uintptr_t&, ARGS...) { throw std::bad_function_call(); }
 
-        static std::uintptr_t life_nothing(const type_key, const std::uintptr_t&, const void*) { return 0; }
+        static std::uintptr_t life_nothing(const type_key, const std::uintptr_t&) { return 0; }
         
     public:
         callback() noexcept : _object(0), _invoke(&invoke_nothing), _life(&life_nothing) {}
@@ -195,7 +195,7 @@ namespace sy_callback {
         }
 
         ~callback() { 
-            _life(type_key::destroy, _object, nullptr);
+            _life(type_key::destroy, _object);
             _object = 0;
             _invoke = &invoke_nothing;
             _life   = &life_nothing;
