@@ -177,7 +177,7 @@ namespace sy_callback {
                 return;
             }
 
-            std::uintptr_t object = other._life(type_key::copy, other._object, nullptr);
+            std::uintptr_t object = other._life(type_key::copy, other._object);
             assert(object != 0 && "Callback object is not copyable!");
 
             _object = object;
@@ -467,26 +467,6 @@ namespace sy_callback {
             callback._invoke    = &invoke_any<typename std::decay<ANY_T>::type>;
             callback._life      = &life_any<typename std::decay<ANY_T>::type>;
             return callback;
-        }
-
-        template<typename ANY_T>
-        typename std::enable_if<
-            is_invocable_r<ANY_T, RETURN, ARGS...>::value &&
-            !std::is_same<callback, typename std::decay<ANY_T>::type>::value,
-        callback&>::type
-        operator=(const callback& other) {
-            if (this == &other || other._life == &life_nothing) return *this;
-
-            std::uintptr_t object = other._life(type_key::copy, other._object);
-            assert(object != 0 && "Callback object is not copyable!");
-
-            if(_life != &life_nothing) _life(type_key::destroy, _object);
-
-            _object = object;
-            _invoke = other._invoke;
-            _life   = other._life;
-
-            return *this;
         }
 
         callback& operator=(const callback& other) {
