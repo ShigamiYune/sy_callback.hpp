@@ -136,6 +136,9 @@ namespace sy_callback {
         static RETURN invoke_global(const std::uintptr_t& object, ARGS... args) {
             return (*FUNC)(args...);
         }
+        static RETURN invoke_global_not_noexcept(const std::uintptr_t& object, ARGS... args) {
+            return (*reinterpret_cast<RETURN(*)(ARGS...)>(object))(args...);
+        }
         // INVOKE LIFE ------------------------------------------------------------------
         static std::uintptr_t life_global(type_key type, const std::uintptr_t& object) {
             return object;
@@ -144,7 +147,10 @@ namespace sy_callback {
         template<RETURN(*FUNC)(ARGS...) noexcept>
         static RETURN invoke_global(const std::uintptr_t& object, ARGS... args) {
             return (*FUNC)(args...);
-        }     
+        }  
+        static RETURN invoke_global_noexcept(const std::uintptr_t& object, ARGS... args) {
+            return (*reinterpret_cast<RETURN(*)(ARGS...) noexcept>(object))(args...);
+        }   
 #endif 
         template<typename ANY_T>
         static RETURN invoke_any(const std::uintptr_t& object, ARGS... args) {
@@ -209,6 +215,19 @@ namespace sy_callback {
             _invoke = &invoke_any<T>;
             _life   = &life_any<T>;
         }
+
+        callback(RETURN(*func)(ARGS...)) {
+            _object = reinterpret_cast<std::uintptr_t>(func);
+            _invoke = &invoke_global_not_noexcept;
+            _life   = &life_global;
+        }
+#if __cplusplus >= 201703L
+        callback(RETURN(*func)(ARGS...) noexcept) {
+            _object = reinterpret_cast<std::uintptr_t>(func);
+            _invoke = &invoke_global_noexcept;
+            _life   = &life_global;
+        }  
+#endif 
 
         ~callback() { 
             _life(type_key::destroy, _object);
@@ -459,7 +478,9 @@ namespace sy_callback {
         }
 #endif
         template<typename ANY_T>
-        static typename std::enable_if<is_invocable_r<ANY_T, RETURN, ARGS...>::value,
+        static typename std::enable_if<
+            !std::is_same<typename std::decay<ANY_T>::type, callback>::value &&
+            is_invocable_r<ANY_T, RETURN, ARGS...>::value,
         callback<RETURN(ARGS...)>>::type 
         make(ANY_T&& func) {
             callback<RETURN(ARGS...)> callback;
@@ -468,6 +489,60 @@ namespace sy_callback {
             callback._life      = &life_any<typename std::decay<ANY_T>::type>;
             return callback;
         }
+
+        static callback<RETURN(ARGS...)> make(callback<RETURN(ARGS...)>&& func) {
+            return std::forward<callback<RETURN(ARGS...)>>(func);
+        }
+
+        static callback<RETURN(ARGS...)> make(RETURN(*func)(ARGS...)) {
+            callback<RETURN(ARGS...)> callback;
+            callback._object = reinterpret_cast<std::uintptr_t>(func);
+            callback._invoke = &invoke_global_not_noexcept;
+            callback._life   = &life_global;
+        }
+#if __cplusplus >= 201703L
+        static callback<RETURN(ARGS...)> make(RETURN(*func)(ARGS...) noexcept) {
+            callback<RETURN(ARGS...)> callback;
+            callback._object = reinterpret_cast<std::uintptr_t>(func);
+            callback._invoke = &invoke_global_noexcept;
+            callback._life   = &life_global;
+        }  
+#endif
+
+        template<typename ANY_T>
+        typename std::enable_if<
+            !std::is_same<typename std::decay<ANY_T>::type, callback>::value &&
+            is_invocable_r<ANY_T, RETURN, ARGS...>::value,
+        callback&>::type
+        operator=(ANY_T&& func) {
+            if (_life != &life_nothing) _life(type_key::destroy, _object);
+
+            using T = typename std::decay<ANY_T>::type;
+            _object = reinterpret_cast<std::uintptr_t>(new T(std::forward<ANY_T>(func)));
+            _invoke = &invoke_any<T>;
+            _life   = &life_any<T>;
+            return *this;
+        }
+
+        callback& operator=(RETURN(*func)(ARGS...)) {
+            if (_life != &life_nothing) _life(type_key::destroy, _object);
+
+            _object = reinterpret_cast<std::uintptr_t>(func);
+            _invoke = &invoke_global_not_noexcept;
+            _life   = &life_global;
+            return *this;
+        }
+
+#if __cplusplus >= 201703L
+        callback& operator=(RETURN(*func)(ARGS...) noexcept) {
+            if (_life != &life_nothing) _life(type_key::destroy, _object);
+
+            _object = reinterpret_cast<std::uintptr_t>(func);
+            _invoke = &invoke_global_noexcept;
+            _life   = &life_global;
+            return *this;
+        }
+#endif
 
         callback& operator=(const callback& other) {
             if (this == &other || other._life == &life_nothing) return *this;
