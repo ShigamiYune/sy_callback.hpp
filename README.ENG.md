@@ -1,8 +1,10 @@
-# `sy_callback.hpp` — Header-only C++11 callback
+# `sy_callback.hpp` — Header-only callback library for C++11
 
 ---
-`sy_callback.hpp` is a **header-only library** that serves as a **drop-in replacement for `std::function`** with **higher performance** and a **smaller footprint**.
---- 
+
+`sy_callback.hpp` is a **header-only library** that acts as a **drop-in replacement for `std::function`** with **higher performance** and a **smaller footprint**.
+
+---
 
 ## Quick Start
 
@@ -31,11 +33,11 @@ int main() {
         [](const char* chars){ std::cout << chars << std::endl; }; // any callable
 
     if(cb_compare(10, 11)) std::cout << "compare is same" << std::endl;
-    else std::cout << "compare not same" << std::endl;
+    else std::cout << "compare is not same" << std::endl;
 
     std::cout << "multi of 7 and 8: " << cb_multi(7, 8) << std::endl;
 
-    std::cout << "print: "; cb_anything("call a lambda\n");
+    std::cout << "print: "; cb_anything("call lambda\n");
 
     return 0;
 }
@@ -50,10 +52,10 @@ int main() {
 A `callback` object consists of three main components:
 
 * **Pointer to object (8 bytes)**: stores the address of the object or `nullptr`.
-* **Invoke function (static function pointer)**: calls the target function according to the signature.
+* **Invoke function (static function pointer)**: calls the function according to the signature.
 * **Manager function (static function pointer)**: responsible for **copy/move/destroy** operations.
 
-Internal layout:
+Internal structure:
 
 ```cpp
 ┌───────────────────────────────────────────┐
@@ -65,7 +67,7 @@ Internal layout:
 └───────────────────────────────────────────┘
 ```
 
-* `invoke_fn` → contains the logic to call the function (lambda, global, member, functor).
+* `invoke_fn` → contains logic to call the function (lambda, global, member, functor).
 * `manage_fn` → contains logic to manage the object’s lifetime (copy/destroy).
 
 Base size: **24 bytes** (3 pointers).
@@ -82,7 +84,7 @@ For any callable object → memory is allocated on the heap, and `object_ptr` po
   * **Lambdas** (capturing or non-capturing).
   * **Functors** or any callable object.
 * Supports **copy / move**.
-* Does **not** use SBO (Small Buffer Optimization), which simplifies the footprint.
+* Does **not** use SBO (Small Buffer Optimization), keeping the footprint simple.
 
 **Not supported**:
 
@@ -97,20 +99,20 @@ For any callable object → memory is allocated on the heap, and `object_ptr` po
 
 | Callback type              | Direct call (µs) | `sy_callback` (µs) | `std::function` (µs) |
 | -------------------------- | ---------------- | ------------------ | -------------------- |
-| Small lambda capture       | 22k              | 44k–47k            | 82k–83k              |
-| Member function (inline)   | 22k              | 41k–42k            | 82k–84k              |
-| Global (inline/non-inline) | 20k              | 34k                | 75k                  |
-| `std::bind`                | 135k–136k        | 150k–151k          | 215k                 |
+| Small lambda capture       | \~22k            | \~44k–47k          | \~82k–83k            |
+| Member function (inline)   | \~22k            | \~41k–42k          | \~82k–84k            |
+| Global (inline/non-inline) | \~20k            | \~34k              | \~75k                |
+| `std::bind`                | \~135k–136k      | \~150k–151k        | \~215k               |
 
 ### 3.2. Construction & destruction time (10 million calls)
 
 | Callback type                     | `sy_callback` (µs) | `std::function` (µs) |
 | --------------------------------- | ------------------ | -------------------- |
-| Small lambda (1 object)           | 338k               | 605k                 |
-| Large lambda capture (int\[1000]) | 900k               | 2.49M                |
-| Global function                   | 280k               | 1.29M                |
+| Small lambda (1 object)           | \~338k             | \~605k               |
+| Large lambda capture (int\[1000]) | \~900k             | \~2.49M              |
+| Global function                   | \~280k             | \~1.29M              |
 
-### 3.3. Copy, move, and assignment time (10 million calls)
+### 3.3. Copy, move, assign (10 million calls)
 
 | Type          | Copy (µs) | Move (µs) | Assign (µs) |
 | ------------- | --------- | --------- | ----------- |
@@ -151,16 +153,16 @@ For any callable object → memory is allocated on the heap, and `object_ptr` po
 
 ### `sy_callback.hpp`
 
-| Type                                                  | Time      | Binary size (bytes) |
-| ----------------------------------------------------- | --------- | ------------------- |
-| Lambda                                                | \~1.216 s | 1,333,528           |
-| Global (inline)                                       | \~0.194 s | 683,464             |
-| Global (non-inline)                                   | \~0.157 s | 226,824             |
-| Member (inline)                                       | \~0.665 s | 1,751,752           |
-| Member (lambda)                                       | \~1.070 s | 1,571,576           |
-| Member (bind)                                         | \~0.725 s | 363,864             |
-| Member (inline, different class, same signature)      | \~0.727 s | 2,106,376           |
-| Member (inline, different class, different signature) | \~2.051 s | 3,893,336           |
+| Type                                                         | Time      | Binary size (bytes) |
+| ------------------------------------------------------------ | --------- | ------------------- |
+| Lambda                                                       | \~1.216 s | 1,333,528           |
+| Global (inline)                                              | \~0.194 s | 683,464             |
+| Global (non-inline)                                          | \~0.157 s | 226,824             |
+| Member (inline)                                              | \~0.665 s | 1,751,752           |
+| Member (lambda)                                              | \~1.070 s | 1,571,576           |
+| Member (bind)                                                | \~0.725 s | 363,864             |
+| Member (bind) (inline, different class, same signature)      | \~0.727 s | 2,106,376           |
+| Member (bind) (inline, different class, different signature) | \~2.051 s | 3,893,336           |
 
 ### `std::function`
 
