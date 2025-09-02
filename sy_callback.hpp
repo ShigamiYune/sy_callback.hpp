@@ -22,6 +22,7 @@
 #include <cassert>
 #include <functional>
 #include <type_traits>
+#include <atomic>
 
 namespace sy_callback {
     template<typename SIGNATURE> class callback;
@@ -439,11 +440,13 @@ namespace sy_callback {
         static callback<RETURN(ARGS...)> make(callback<RETURN(ARGS...)>&& func) {
             return std::forward<callback<RETURN(ARGS...)>>(func);
         }
+
         static callback<RETURN(ARGS...)> make(RETURN(*func)(ARGS...)) {
             callback<RETURN(ARGS...)> callback;
             callback._object = reinterpret_cast<std::uintptr_t>(func);
             callback._invoke = &invoke_global_not_noexcept;
             callback._life   = &life_global;
+            return callback;
         }
 #if __cplusplus >= 201703L
         static callback<RETURN(ARGS...)> make(RETURN(*func)(ARGS...) noexcept) {
@@ -451,6 +454,7 @@ namespace sy_callback {
             callback._object = reinterpret_cast<std::uintptr_t>(func);
             callback._invoke = &invoke_global_noexcept;
             callback._life   = &life_global;
+            return callback;
         }  
 #endif
         callback() noexcept : _object(0), _invoke(&invoke_nothing), _life(&life_nothing) {}
