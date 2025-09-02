@@ -63,7 +63,7 @@ Internal structure:
 ├───────────────────────────────────────────┤
 │ object_ptr : void*                (8 B)   │
 │ invoke_fn  : R(*)(void*, Args...) (8 B)   │
-│ life_fn    : void(*)(void*, Op)   (8 B)   │
+│ life_fn    : void*(*)(void*, Op)   (8 B)  │
 └───────────────────────────────────────────┘
 ```
 
