@@ -5,6 +5,42 @@
 `sy_callback.hpp` is a **header-only library** that replaces `std::function`, with **higher performance** and **smaller footprint**.
 
 ---
+## Quick start
+```
+#include <iostream>
+#include "sy_callback.hpp"
+
+struct MyClass {
+    bool compare(int v, int u) {
+        return v == u;
+    }
+
+};
+template<typename R, typename V, typename U>
+static R multi(V v, U u) { return v * u; }
+
+int main() {
+    MyClass my_class;
+
+    sy_callback::callback<bool(int, int)> cb_compare = 
+        sy_callback::callback<bool(int, int)>::make<MyClass, &MyClass::compare>(&my_class); // membsr
+
+    sy_callback::callback<int(long, int)> cb_multi = multi; // global : that work because "multi" has cast in operator
+
+    sy_callback::callback<void(const char*)> cb_anything = 
+        [](const char* chars){ std::cout << chars << std::endl; }; // anything callable
+
+    if(cb_compare(10, 11)) std::cout << "compare is same" << std::endl;
+    else std::cout << "compare not same" << std::endl;
+
+    std::cout << "multi of 7 and 8: " << cb_multi(7, 8) << std::endl;
+
+    std::cout << "print: "; cb_anything("call a lambda\n");
+
+    return 0;
+}
+```
+---
 
 ## 1. Architecture
 
