@@ -97,20 +97,20 @@ Với bất kỳ callable object nào → bộ nhớ được cấp phát trên 
 
 ### 3.1. Thời gian gọi (10 triệu lần)
 
-| Loại callback              | Gọi trực tiếp (µs) | `sy_callback` (µs) | `std::function` (µs) |
-| -------------------------- | ------------------ | ------------------ | -------------------- |
-| Lambda nhỏ capture         | 22k                | 44k–47k            | 82k–83k              |
-| Hàm thành viên (inline)    | 22k                | 41k–42k            | 82k–84k              |
-| Global (inline/non-inline) | 20k                | 34k                | 75k                  |
-| `std::bind`                | 135k–136k          | 150k–151k          | 215k                 |
+| Loại callback              | Gọi trực tiếp (µs)  | `sy_callback` (µs)  | `std::function` (µs)  |
+| -------------------------- | ------------------  | ------------------  | --------------------  |
+| Lambda nhỏ capture         | ~22k                | ~44k–47k            | ~82k–83k              |
+| Hàm thành viên (inline)    | ~22k                | ~41k–42k            | ~82k–84k              |
+| Global (inline/non-inline) | ~20k                | ~34k                | ~75k                  |
+| `std::bind`                | ~135k–136k          | ~150k–151k          | ~215k                 |
 
 ### 3.2. Thời gian khởi tạo & hủy (10 triệu lần)
 
 | Loại callback                   | `sy_callback` (µs) | `std::function` (µs) |
 | ------------------------------- | ------------------ | -------------------- |
-| Lambda nhỏ (1 object)           | 338k               | 605k                 |
-| Lambda capture lớn (int\[1000]) | 900k               | 2.49M                |
-| Hàm global                      | 280k               | 1.29M                |
+| Lambda nhỏ (1 object)           | ~338k              | ~605k                |
+| Lambda capture lớn (int\[1000]) | ~900k              | ~2.49M               |
+| Hàm global                      | ~280k              | ~1.29M               |
 
 ### 3.3. Copy, move, assign (10 triệu lần)
 
