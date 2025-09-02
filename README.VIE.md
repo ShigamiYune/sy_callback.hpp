@@ -5,6 +5,50 @@
 `sy_callback.hpp` là một **thư viện header-only** thay thế `std::function`, với **hiệu năng cao hơn** và **footprint nhỏ hơn**.
 
 ---
+## Bắt đầu nhanh
+```
+#include <iostream>
+#include "sy_callback.hpp"
+
+// Định nghĩa một lớp MyClass
+struct MyClass {
+    // Hàm so sánh hai số nguyên
+    bool compare(int v, int u) {
+        return v == u;
+    }
+};
+
+// Hàm tổng quát nhân hai giá trị
+template<typename R, typename V, typename U>
+static R multi(V v, U u) { 
+    return v * u; 
+}
+
+int main() {
+    MyClass my_class;
+
+    sy_callback::callback<bool(int, int)> cb_compare = 
+        sy_callback::callback<bool(int, int)>::make<MyClass, &MyClass::compare>(&my_class); // hàm thành viên
+
+    sy_callback::callback<int(long, int)> cb_multi = multi; // hàm toàn cục: hoạt động vì "multi" được ép kiểu trong operator
+
+    sy_callback::callback<void(const char*)> cb_anything = 
+        [](const char* chars){ std::cout << chars << std::endl; }; // bất cứ cái gì có thể gọi được
+
+    if(cb_compare(10, 11)) 
+        std::cout << "compare giống nhau" << std::endl;
+    else 
+        std::cout << "compare không giống nhau" << std::endl;
+
+    std::cout << "tích của 7 và 8: " << cb_multi(7, 8) << std::endl;
+
+    std::cout << "in ra: "; 
+    cb_anything("gọi lambda\n");
+
+    return 0;
+}
+```
+---
 
 ## 1. Kiến trúc
 
