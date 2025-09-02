@@ -118,8 +118,8 @@ For arbitrary callables → the object is allocated on the heap, and `object_ptr
 | ----------------------- | --------------- |
 | Member, same class      | 1008            |
 | Member, different class | 1312            |
-| Global                  | 560             |
-| Global (heap)           | 32              |
+| Global (inline)         | 560             |
+| Global (not inline)     | 32              |
 | Arbitrary callable      | 654             |
 | std::bind               | 160             |
 | Different signatures    | 1200            |
