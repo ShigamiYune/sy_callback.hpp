@@ -186,8 +186,8 @@ struct MyClass {
     }
 };
 
-template<typename V, typename U>
-static auto multi(V v, U u) { return v + u; }
+template<typename R, typename V, typename U>
+static R total(V v, U u) { return v + u; }
 
 void global(int a, int b) {
     std::cout << "global: " << a << "," << b << "\n";
@@ -201,7 +201,7 @@ struct Functor {
 
 int main() {
     MyClass my_class;
-
+    
     sy_callback::callback<void(int,int)> cb_member = 
         sy_callback::callback<void(int,int)>::make<MyClass, &MyClass::compare>(&my_class);
     cb_member(2, 2);
@@ -209,11 +209,11 @@ int main() {
     sy_callback::callback<void(int,int)> cb_global = global;
     cb_global(1, 2);
 
-    sy_callback::callback<int(int,int)> cb_multi = multi; 
-    cb_multi(3, 4);
+    sy_callback::callback<int(int,int)> cb_total = total; 
+    std::cout << "total: " << cb_total(1, 2) << std::endl;
 
-    sy_callback::callback<int(int,int)> cb_multi_spec = multi;
-    cb_multi_spec(5, 6);
+    sy_callback::callback<int(int,int)> cb_multi_spec = MyClass::multi;
+    std::cout << "multi: " << cb_multi_spec(1, 2) << std::endl;
 
     sy_callback::callback<void(int,int)> cb_lam = [](int a, int b){
         std::cout << "lambda: " << a+b << "\n";
