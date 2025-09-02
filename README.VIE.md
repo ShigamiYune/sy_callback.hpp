@@ -6,7 +6,7 @@
 
 ---
 ## Bắt đầu nhanh
-```
+``` cpp
 #include <iostream>
 #include "sy_callback.hpp"
 
@@ -123,12 +123,13 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 
 | Loại | Kích thước (byte) |
 | --- | --- |
-| Member cùng class | 1008 |
-| Member khác class | 1312 |
-| Global | 560 → 32 (heap) |
-| Callable bất kỳ | 654 |
-| std::bind | 160 |
-| Signature khác nhau | 1200 |
+| Member, cùng class      | 1008            |
+| Member, khác class      | 1312            |
+| Global                  | 560             |
+| Global (heap)           | 32              |
+| bất kì callback nào     | 654             |
+| std::bind               | 160             |
+| signatures khác nhau    | 1200            |
 
 ### `std::function`
 
@@ -138,9 +139,9 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 | Member khác class (bind) | 52,784 |
 | Lambda | 39,600 |
 | Global | 32 |
-| Signature khác nhau (bind) | 58,352 |
-| Signature khác nhau (lambda) | 1,136 |
-| Signature khác nhau (global) | 40,272 |
+| Signature khác nhau (dùng bind) | 58,352 |
+| Signature khác nhau (dùng lambda) | 1,136 |
+| Signature khác nhau (dùng global) | 40,272 |
 
 ---
 
