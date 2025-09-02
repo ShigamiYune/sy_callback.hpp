@@ -161,8 +161,8 @@ Với bất kỳ callable object nào → bộ nhớ được cấp phát trên 
 | Member (inline)                             | \~0.665 s | 1,751,752             |
 | Member (lambda)                             | \~1.070 s | 1,571,576             |
 | Member (bind)                               | \~0.725 s | 363,864               |
-| Member (inline, khác class, cùng signature) | \~0.727 s | 2,106,376             |
-| Member (inline, khác class, khác signature) | \~2.051 s | 3,893,336             |
+| Member (bind) (inline, khác class, cùng signature) | \~0.727 s | 2,106,376      |
+| Member (bind) (inline, khác class, khác signature) | \~2.051 s | 3,893,336      |
 
 ### `std::function`
 
