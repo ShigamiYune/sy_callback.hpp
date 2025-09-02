@@ -125,8 +125,8 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 | --- | --- |
 | Member, cùng class      | 1008            |
 | Member, khác class      | 1312            |
-| Global                  | 560             |
-| Global (heap)           | 32              |
+| Global (nhúng)          | 560             |
+| Global (không nhúng)    | 32              |
 | bất kì callback nào     | 654             |
 | std::bind               | 160             |
 | signatures khác nhau    | 1200            |
@@ -152,8 +152,8 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 | Loại | Thời gian | Kích thước mã (byte) |
 | --- | --- | --- |
 | Lambda | ~1.216 s | 1,333,528 |
-| Global | ~0.194 s | 907,464 |
-| Global (heap) | ~0.157 s | 226,824 |
+| Global (nhúng) | ~0.194 s | 907,464 |
+| Global (không nhúng) | ~0.157 s | 226,824 |
 | Member | ~0.665 s | 1,751,752 |
 | Member (lambda) | ~1.070 s | 1,571,576 |
 | Member (bind) | ~0.725 s | 363,864 |
