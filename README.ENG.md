@@ -145,8 +145,8 @@ For arbitrary callables → the object is allocated on the heap, and `object_ptr
 | Type                                         | Time      | Code size (bytes) |
 | -------------------------------------------- | --------- | ----------------- |
 | Lambda                                       | \~1.216 s | 1,333,528         |
-| Global                                       | \~0.194 s | 907,464           |
-| Global (heap)                                | \~0.157 s | 226,824           |
+| Global (inline)                              | \~0.194 s | 907,464           |
+| Global (not inline)                          | \~0.157 s | 226,824           |
 | Member                                       | \~0.665 s | 1,751,752         |
 | Member (lambda)                              | \~1.070 s | 1,571,576         |
 | Member (bind)                                | \~0.725 s | 363,864           |
