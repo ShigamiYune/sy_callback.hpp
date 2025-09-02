@@ -65,7 +65,7 @@ namespace sy_callback {
             >::type;
         };
 
-        enum type_key{
+        enum class type_key{
             destroy, copy
         };
 
@@ -237,8 +237,22 @@ namespace sy_callback {
         }
 
         inline bool isCallable() const { return _invoke != &invoke_nothing; }
+        inline operator bool() const { return _invoke != &invoke_nothing; }
+
         inline RETURN invoke(ARGS... args) const { return _invoke(_object, args...); }
         inline RETURN operator()(ARGS... args) const { return _invoke(_object, args...); }
+
+        void swap(callback& other) {
+            std::swap(_object, other._object);
+            std::swap(_invoke, other._invoke);
+            std::swap(_life, other._life);
+        }
+        void reset() {
+            _life(type_key::destroy, _object);
+            _object = 0;
+            _invoke = &invoke_nothing;
+            _life = &life_nothing;
+        }
 
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) , typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
@@ -508,7 +522,6 @@ namespace sy_callback {
             callback._life   = &life_global;
         }  
 #endif
-
         template<typename ANY_T>
         typename std::enable_if<
             !std::is_same<typename std::decay<ANY_T>::type, callback>::value &&
@@ -574,6 +587,5 @@ namespace sy_callback {
             return *this;
         }   
     };
-    
 }
 #endif
