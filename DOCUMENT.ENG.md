@@ -553,3 +553,38 @@ int main() {
     // Note: target always returns the original object, not a copy
 }
 ```
+### 8.7 reset()
+
+```cpp
+#include <iostream>
+#include "sy_callback.hpp"
+
+void global() {
+    std::cout << "Global called\n";
+};
+
+int main() {
+    sy_callback::callback<void()> cb1 = global;
+   
+    if(cb1) {
+        std::cout << "callback cb1 is callable and we call it: "; cb1();
+    }
+    else{
+        std::cout << "callback cb1 can't callable \n";
+    }
+
+    cb1.reset();
+
+    if(cb1) {
+        std::cout << "callback cb1 is callable and we call it: "; cb1();
+    }
+    else{
+        std::cout << "callback cb1 can't callable \n";
+    }
+    
+    // Lưu ý
+    // Nếu bạn reset callback trên đa luồng thì sẽ có khả năng bị race coddition
+
+    return 0;
+}
+```
