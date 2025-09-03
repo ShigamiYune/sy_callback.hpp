@@ -1,10 +1,12 @@
 # `sy_callback.hpp` — Thư viện callback header-only cho C++11
 
 ---
-`sy_callback.hpp` là một **thư viện header-only** thay thế `std::function`, với **hiệu năng cao hơn** và **footprint nhỏ hơn**.
+
+`sy_callback.hpp` là một **thư viện header-only** nhằm thay thế `std::function` trong môi trường yêu cầu hiệu suất cao, nhúng
 
 ---
-## Quick Start 
+
+## Quick Start
 
 ```cpp
 #include <iostream>
@@ -91,35 +93,39 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 
 ## 3. Hiệu năng
 
+> Lưu ý: tất cả giá trị đánh dấu ~ là trung bình và làm tròn từ nhiều lần biên dịch với clang++ -O2 trên MacOS M1.
+Lưu ý: Các số liệu đo được dưới đây có thể khác trên kiến trúc khác nhau, hệ điều hành khác nhau, compile khác nhau
+> 
+
 ### 3.1. Thời gian gọi (10 triệu lần)
 
-| Loại callback | Gọi trực tiếp (µs) | `sy_callback` (µs) | `std::function` (µs) |
+| Loại callback | Gọi trực tiếp (s) | `sy_callback` (µs) | `std::function` (µs) |
 | --- | --- | --- | --- |
-| Lambda capture nhỏ | 22k | 44k–47k | 82k–83k |
-| Member function (nhúng) | 22k | 41k–42k | 82k–84k |
-| global (nhúng và không nhúng) | 20k | 34k | 75k |
-| `std::bind` | 135k–136k | 150k–151K | 215k |
+| Lambda capture nhỏ | ~0.022 s | ~0.044 s | ~0.082 s |
+| Member function (nhúng) | ~0.022 s | ~0.042 s | ~0.082 s |
+| global (nhúng và không nhúng) | ~0.02 s | ~0.034 s | ~0.075 s |
+| `std::bind` | ~0.135 s | ~0.15 s | ~0.215 s |
 
 ### 3.2. Thời gian khởi tạo & hủy (10 triệu lần)
 
-| Loại callback | `sy_callback` (µs) | `std::function` (µs) |
+| Loại callback | `sy_callback` (s) | `std::function` (s) |
 | --- | --- | --- |
-| Lambda nhỏ (1 object) | 338k | 605k |
-| Lambda capture lớn (mảng int[1000]) | 900k | 2.49M |
-| Global function | 280k | 1.29M |
+| Lambda nhỏ (1 object) | ~0.338 s | ~0.605 s |
+| Lambda capture lớn (mảng int[1000]) | ~0.9 s | ~2.49 s |
+| Global function | ~0.28 s | ~1.29 s |
 
 ## 3.3 Thời gian copy, move và assign (10 triệu lần)
 
-| Loại | copy (µs) | move (µs) | Assign (µs) |
+| Loại | copy (s) | move (µs) | Assign (µs) |
 | --- | --- | --- | --- |
-| sy_callback | ~300K | ~37K | ~340K |
-| std::function | ~460K | ~450K | ~2M |
+| sy_callback | ~0.3 s | ~0.037 s | ~0.340 s |
+| std::function | ~0.460 | ~0.45 s | ~2 s |
 
 ---
 
 ## 4. Memory usage ( 64 bit )
 
-| Lambda size (byte) | std::function total (byte) | sy_callback total (byte) |
+| size của callable (byte) | std::function total (byte) | sy_callback total (byte) |
 | --- | --- | --- |
 | 1 | 32 | 25 |
 | 8 | 32 | 32 |
@@ -129,35 +135,63 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 | 48 | 88 | 72 |
 | 56 | 96 | 80 |
 | 64 | 104 | 88 |
-| … | 32 + Lambda size + 8 (vptr) | 24 + Lambda size |
-
-## 5. Kích thước mã máy
-
-### `sy_callback.hpp`
-
-| Loại | Kích thước (byte) |
-| --- | --- |
-| Member (nhúng) cùng class | 1008 |
-| Member (nhúng) khác class | 1312 |
-| Global (nhúng) | 336 |
-| Global (không nhúng) | 32 |
-| Callable bất kỳ | 654 |
-| std::bind | 160 |
-| Signature khác nhau | 1200 |
-
-### `std::function`
-
-| Loại | Kích thước (byte) |
-| --- | --- |
-| Member cùng class (bind) | 160 |
-| Member khác class (bind) | 52,784 |
-| Lambda | 39,600 |
-| Global | 32 |
-| Signature khác nhau (bind) | 58,352 |
-| Signature khác nhau (lambda) | 1,136 |
-| Signature khác nhau (global) | 40,272 |
+| … | 32 + callable size + 8 (vptr) | 24 + callable size |
 
 ---
+
+### 5. Kích thước mã máy (Codegen size)
+
+---
+
+### 5.1. Kích thước cá nhân (base + per-signature)
+
+| Thư viện | Base overhead (byte) | Per-signature overhead (byte) | **Tổng codegen** =
+Base + body của callback × n |
+| --- | --- | --- | --- |
+| **sy_callback** | ~1,700 | ~1,000 | ~1,700 + (body × n) |
+| **std::function** | ~140 | ~1,000 | ~140 + (body × n) |
+
+---
+
+### 5.2. Kích thước wrap theo loại callback (body) (đã trừ chi phí Base)
+
+5.2.1 Nhúng
+
+| Loại callback | sy_callback (byte) | std::function (byte) |
+| --- | --- | --- |
+| khác Member - cùng class - cùng signature - nhúng | ~900 | không có cách tương tự |
+| Member khác class, cùng signature, nhúng | ~900 | Không có cách tương tự |
+| Member khác class, khác signature, nhúng | ~2,300 | Không có cách tương tự |
+| Member cùng class, khác signature, nhúng | ~2,300 | Không có cách tương tự |
+| Global / Static cùng signature, nhúng | ~300 | Không có cách tương tự |
+| Global / Static Khác signature, nhúng | ~1,800 | Không có cách tương tự |
+
+5.2.2 Bind
+
+| Loại callback | sy_callback (byte) | std::function (byte) |
+| --- | --- | --- |
+| Member cùng class, cùng signature, bind | 0  | 0  |
+| Member khác class, cùng signature, bind | ~1,000 | ~28,000 |
+| Member cùng class, khác signature, bind | ~7,000 | ~42,000 |
+| Member khác class, khác signature, bind | ~7,000 | ~42,000 |
+
+5.2.3 Lambda
+
+| Loại callback | sy_callback (byte) | std::function (byte) |
+| --- | --- | --- |
+| Lambda không capture, cùng signature | ~500 | ~30,000 |
+| Lambda không capture, khác signature | ~1,800 | ~32,000 |
+| Lambda có capture 8 byte, cùng signature | ~600 | ~30,000  |
+| Lambda có capture 24 byte, cùng signature | ~600 | ~32,000  |
+| Lambda có capture 8 byte, khác signature | ~1,400 | ~32,000 |
+| Lambda có capture 24 byte, khác signature | ~1,400 | ~34,000 |
+
+5.2.4 Global / Static
+
+| Loại callback | sy_callback (byte) | std::function (byte) |
+| --- | --- | --- |
+| Global / Static cùng signature | 96 `cho lần đầu tiên và 0 cho những lần tiếp theo` | 32 `cho lần đầu tiên và 0 cho những lần tiếp theo` |
+| Global / Static khác signature | ~1,600 | ~31,000 |
 
 ## 6. Thời gian biên dịch (1000 callback)
 
@@ -165,24 +199,24 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 
 | Loại | Thời gian | Kích thước mã (byte) |
 | --- | --- | --- |
-| Lambda | ~1.216 s | 1,333,528 |
-| Global (nhúng) | ~0.194 s | 683,464 |
-| Global (không nhúng) | ~0.157 s | 226,824 |
-| Member (nhúng) | ~0.665 s | 1,751,752 |
-| Member (lambda) | ~1.070 s | 1,571,576 |
-| Member (bind) | ~0.725 s | 363,864 |
-| Member (nhúng) khác class, cùng signature | ~0.727 s | 2,106,376 |
-| Member (nhúng) khác class, khác signature | ~2.051 s | 3,893,336 |
+| Lambda | ~1.216 s | ~1,334,000 |
+| Global (nhúng) | ~0.194 s | ~683,000 |
+| Global (không nhúng) | ~0.157 s | ~227,000 |
+| Member (nhúng) | ~0.665 s | ~1,752,000 |
+| Member (lambda) | ~1.070 s | ~1,572,000 |
+| Member (bind) | ~0.725 s | ~364,000 |
+| Member (nhúng) khác class, cùng signature | ~0.727 s | ~2,106,000 |
+| Member (nhúng) khác class, khác signature | ~2.051 s | ~3,893,000 |
 
 ### `std::function`
 
 | Loại | Thời gian | Kích thước mã (byte) |
 | --- | --- | --- |
-| Lambda | ~39.501 s | 30,029,544 |
-| Global | ~0.155 s | 263,384 |
-| Member (bind) | ~0.715 s | 400,424 |
-| Member khác class, cùng signature | ~87.890 s | 45,620,328 |
-| Member khác class, khác signature | ~92.898 s | 49,862,104 |
+| Lambda | ~39.501 s | ~30,023,000 |
+| Global | ~0.155 s | 263,000 |
+| Member (bind) | ~0.715 s | ~400,000 |
+| Member khác class, cùng signature | ~87.890 s | ~45,620,000 |
+| Member khác class, khác signature | ~92.898 s | ~49,862,000 |
 ---
 
 ## [Đọc Document và API tại đây:] (https://github.com/ShigamiYune/sy_callback.hpp/blob/main/DOCUMENT.VIE.md)
