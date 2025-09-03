@@ -553,7 +553,9 @@ int main() {
     // Note: target always returns the original object, not a copy
 }
 ```
-### 8.7 reset()
+---
+
+### 8.7 `reset()`
 
 ```cpp
 #include <iostream>
@@ -567,23 +569,23 @@ int main() {
     sy_callback::callback<void()> cb1 = global;
    
     if(cb1) {
-        std::cout << "callback cb1 is callable and we call it: "; cb1();
+        std::cout << "cb1 is callable, calling it: "; cb1();
     }
-    else{
-        std::cout << "callback cb1 can't callable \n";
+    else {
+        std::cout << "cb1 is not callable\n";
     }
 
     cb1.reset();
 
     if(cb1) {
-        std::cout << "callback cb1 is callable and we call it: "; cb1();
+        std::cout << "cb1 is callable, calling it: "; cb1();
     }
-    else{
-        std::cout << "callback cb1 can't callable \n";
+    else {
+        std::cout << "cb1 is not callable\n";
     }
     
-    // Lưu ý
-    // Nếu bạn reset callback trên đa luồng thì sẽ có khả năng bị race coddition
+    // Note:
+    // Resetting a callback in a multithreaded context may cause a race condition
 
     return 0;
 }
