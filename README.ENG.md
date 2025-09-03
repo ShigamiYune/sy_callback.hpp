@@ -1,7 +1,6 @@
 # `sy_callback.hpp` — Header-only callback library for C++11
 
 ---
-# `sy_callback.hpp`
 
 `sy_callback.hpp` is a **header-only library** that replaces `std::function` with **higher performance** and a **smaller footprint**.
 
