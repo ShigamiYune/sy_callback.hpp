@@ -69,6 +69,11 @@ namespace sy_callback {
         enum class type_key{
             destroy, copy
         };
+        template <typename T, typename = void>
+        struct is_functor : std::false_type {};
+
+        template <typename T>
+        struct is_functor<T, std::void_t<decltype(&T::operator())>> : std::true_type {};
 
         using func_invoke_t = RETURN(*)(const std::uintptr_t&, ARGS...);
         using func_life_t = std::uintptr_t(*)(type_key, const std::uintptr_t&);
@@ -82,6 +87,8 @@ namespace sy_callback {
         private:
             std::uintptr_t _object;
             func_invoke_t _invoke;
+            
+            friend class callback;
 
             target_f(const std::uintptr_t& object, func_invoke_t invoke) : _object(object), _invoke(invoke) {}
         public:
@@ -554,27 +561,40 @@ namespace sy_callback {
             _life = &life_nothing;
         }
 
-        template<typename ANY_T, 
-        typename = typename std::enable_if<
-            !std::is_same<ANY_T, callback>::value &&
-            is_invocable_r<ANY_T, RETURN, ARGS...>::value
-        >::type >
+        template<typename ANY_T,
+                typename = typename std::enable_if<
+                    std::is_pointer<ANY_T>::value &&
+                    std::is_function<typename std::remove_pointer<ANY_T>::type>::value &&
+                    is_invocable_r<ANY_T, RETURN, ARGS...>::value
+                >::type>
         ANY_T target() {
-            if (_invoke == &invoke_global_not_noexcept) return reinterpret_cast<RETURN(*)(ARGS...)>(_object);
-#if __cplusplus >= 201703L
-            else if (_invoke == &invoke_global_noexcept) return reinterpret_cast<RETURN(*)(ARGS...) noexcept>(_object);
-#endif
-            else if (_invoke == &invoke_any<ANY_T>) return reinterpret_cast<ANY_T>(_object);
-             
+            if (_invoke == &invoke_global_not_noexcept)
+                return reinterpret_cast<RETURN(*)(ARGS...)>(_object);
+        #if __cplusplus >= 201703L
+            else if (_invoke == &invoke_global_noexcept)
+                return reinterpret_cast<RETURN(*)(ARGS...) noexcept>(_object);
+        #endif
+            return nullptr;
+        }
+
+        template<typename ANY_T,
+                typename = typename std::enable_if<
+                    !std::is_pointer<ANY_T>::value &&
+                    is_invocable_r<ANY_T, RETURN, ARGS...>::value
+                >::type>
+        ANY_T* target() {
+            if (_invoke == &invoke_any<ANY_T>)
+                return reinterpret_cast<ANY_T*>(_object);
             return nullptr;
         }
 
         template<
             typename CLASS,
-            typename std::enable_if<std::is_class<CLASS>::value, int>::type = 0
+            typename std::enable_if<std::is_class<CLASS>::value && !is_functor<CLASS>::value, int>::type = 0
         >
         target_f<CLASS> target() {
-            if (_invoke == &invoke_member<CLASS>) return target_f<CLASS>(_object, _invoke);
+            if (_life == &life_member<CLASS>) 
+                return target_f<CLASS>(_object, _invoke);
             return target_f<CLASS>(0, nullptr);
         }
 
