@@ -1,10 +1,9 @@
 # `sy_callback.hpp` — Header-only callback library for C++11
 
 ---
+# `sy_callback.hpp`
 
-`sy_callback.hpp` is a **header-only library** that acts as a **drop-in replacement for `std::function`** with **higher performance** and a **smaller footprint**.
-
----
+`sy_callback.hpp` is a **header-only library** that replaces `std::function` with **higher performance** and a **smaller footprint**.
 
 ## Quick Start
 
@@ -25,19 +24,19 @@ int main() {
     MyClass my_class;
 
     sy_callback::callback<bool(int, int)> cb_compare = 
-        sy_callback::callback<bool(int, int)>::make<MyClass, &MyClass::compare>(&my_class); // member function
+        sy_callback::callback<bool(int, int)>::make<MyClass, &MyClass::compare>(&my_class); // member
 
-    sy_callback::callback<int(long, int)> cb_multi = multi; // global function: works because "multi" can be cast
+    sy_callback::callback<int(long, int)> cb_multi = multi; // global: works because "multi" has a cast in operator
 
     sy_callback::callback<void(const char*)> cb_anything = 
         [](const char* chars){ std::cout << chars << std::endl; }; // any callable
 
-    if(cb_compare(10, 11)) std::cout << "compare is same" << std::endl;
-    else std::cout << "compare is not same" << std::endl;
+    if (cb_compare(10, 11)) std::cout << "compare is same" << std::endl;
+    else std::cout << "compare not same" << std::endl;
 
     std::cout << "multi of 7 and 8: " << cb_multi(7, 8) << std::endl;
 
-    std::cout << "print: "; cb_anything("call lambda\n");
+    std::cout << "print: "; cb_anything("call a lambda\n");
 
     return 0;
 }
@@ -49,30 +48,31 @@ int main() {
 
 ### `sy_callback::callback<Signature>`
 
-A `callback` object consists of three main components:
+A `callback` object consists of 3 main components:
 
-* **Pointer to object (8 bytes)**: stores the address of the object or `nullptr`.
-* **Invoke function (static function pointer)**: calls the function according to the signature.
-* **Manager function (static function pointer)**: responsible for **copy/move/destroy** operations.
+* **Pointer object (8 bytes)**: stores the address of the object or `nullptr`.
+* **Invoke function (static function pointer)**: invokes the callable with the corresponding signature.
+* **Life function (static function pointer)**: responsible for **copy / destroy** operations.
 
-Internal structure:
+Internal layout:
 
 ```cpp
-┌───────────────────────────────────────────┐
-│ sy_callback::callback<R(Args...)>         │
-├───────────────────────────────────────────┤
-│ object_ptr : void*                (8 B)   │
-│ invoke_fn  : R(*)(void*, Args...) (8 B)   │
-│ life_fn    : void*(*)(void*, Op)   (8 B)  │
-└───────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ sy_callback::callback<R(Args...)>                        │
+├──────────────────────────────────────────────────────────┤
+│ object_ptr : std::uinptr_t                       (8 byte)│
+│ invoke_fn  : R(*)(std::uinptr_t, Args...)        (8 byte)│
+│ life_fn    : std::uinptr_t(*)(Op, std::uinptr_t) (8 byte)│
+└──────────────────────────────────────────────────────────┘
 ```
 
-* `invoke_fn` → contains logic to call the function (lambda, global, member, functor).
-* `manage_fn` → contains logic to manage the object’s lifetime (copy/destroy).
+* `invoke_fn` → embeds the invocation logic (lambda, global, member, functor).
+* `life_fn` → embeds lifecycle management logic (copy / destroy).
 
-Base size: **24 bytes** (3 pointers).
+Basic size: **24 bytes** (3 pointers).
 
-For any callable object → memory is allocated on the heap, and `object_ptr` points to it.
+For any callable → the object is allocated on the heap, with `object_ptr` pointing to that memory.
+(If it’s a captureless lambda, it is stored as `R(*)(Args...)` in `object_ptr`).
 
 ---
 
@@ -80,89 +80,111 @@ For any callable object → memory is allocated on the heap, and `object_ptr` po
 
 * Supports:
 
-  * **Global**, **static**, **member functions**.
-  * **Lambdas** (capturing or non-capturing).
+  * **Global**, **static**, and **member** functions.
+  * **Lambdas** (with or without captures).
   * **Functors** or any callable object.
-* Supports **copy / move**.
-* Does **not** use SBO (Small Buffer Optimization), keeping the footprint simple.
+  * Template functions → callback will automatically cast the template function to the proper type.
+* Allows **copy / move**.
+* No SBO (Small Buffer Optimization) → simplifies the footprint.
+* Provides `target<T>()` similar to `std::function`.
 
 **Not supported**:
 
-* `target<T>()` like `std::function`.
-* Thread-safe moves.
+* Multi-thread-safe **move and destroy**.
+  (Single-threaded move/destroy is safe; multi-threaded copy is still safe).
 
 ---
 
 ## 3. Performance
 
-### 3.1. Call time (10 million calls)
+### 3.1 Invocation time (10 million calls)
 
-| Callback type              | Direct call (µs) | `sy_callback` (µs) | `std::function` (µs) |
-| -------------------------- | ---------------- | ------------------ | -------------------- |
-| Small lambda capture       | \~22k            | \~44k–47k          | \~82k–83k            |
-| Member function (inline)   | \~22k            | \~41k–42k          | \~82k–84k            |
-| Global (inline/non-inline) | \~20k            | \~34k              | \~75k                |
-| `std::bind`                | \~135k–136k      | \~150k–151k        | \~215k               |
-
-### 3.2. Construction & destruction time (10 million calls)
-
-| Callback type                     | `sy_callback` (µs) | `std::function` (µs) |
-| --------------------------------- | ------------------ | -------------------- |
-| Small lambda (1 object)           | \~338k             | \~605k               |
-| Large lambda capture (int\[1000]) | \~900k             | \~2.49M              |
-| Global function                   | \~280k             | \~1.29M              |
-
-### 3.3. Copy, move, assign (10 million calls)
-
-| Type          | Copy (µs) | Move (µs) | Assign (µs) |
-| ------------- | --------- | --------- | ----------- |
-| sy\_callback  | \~300K    | \~37K     | \~340K      |
-| std::function | \~460K    | \~450K    | \~2M        |
+| Callback type                    | Direct call (µs) | `sy_callback` (µs) | `std::function` (µs) |
+| -------------------------------- | ---------------- | ------------------ | -------------------- |
+| Small capture lambda             | 22k              | 44k–47k            | 82k–83k              |
+| Member function (embedded)       | 22k              | 41k–42k            | 82k–84k              |
+| Global (embedded / non-embedded) | 20k              | 34k                | 75k                  |
+| `std::bind`                      | 135k–136k        | 150k–151k          | 215k                 |
 
 ---
 
-## 4. Binary size
+### 3.2 Construction & destruction time (10 million ops)
+
+| Callback type                     | `sy_callback` (µs) | `std::function` (µs) |
+| --------------------------------- | ------------------ | -------------------- |
+| Small lambda (1 object)           | 338k               | 605k                 |
+| Large capture lambda (int\[1000]) | 900k               | 2.49M                |
+| Global function                   | 280k               | 1.29M                |
+
+---
+
+### 3.3 Copy, move, and assign time (10 million ops)
+
+| Type          | Copy (µs) | Move (µs) | Assign (µs) |
+| ------------- | --------- | --------- | ----------- |
+| sy\_callback  | \~300k    | \~37k     | \~340k      |
+| std::function | \~460k    | \~450k    | \~2M        |
+
+---
+
+## 4. Memory usage (64-bit)
+
+| Lambda size (bytes) | std::function total (bytes) | sy\_callback total (bytes) |
+| ------------------- | --------------------------- | -------------------------- |
+| 1                   | 32                          | 25                         |
+| 8                   | 32                          | 32                         |
+| 16                  | 32                          | 40                         |
+| 24                  | 64                          | 48                         |
+| 32                  | 72                          | 56                         |
+| 48                  | 88                          | 72                         |
+| 56                  | 96                          | 80                         |
+| 64                  | 104                         | 88                         |
+| …                   | 32 + Lambda size + 8 (vptr) | 24 + Lambda size           |
+
+---
+
+## 5. Binary size
 
 ### `sy_callback.hpp`
 
-| Type                             | Size (bytes) |
-| -------------------------------- | ------------ |
-| Member (inline, same class)      | 1008         |
-| Member (inline, different class) | 1312         |
-| Global (inline)                  | 336          |
-| Global (non-inline)              | 32           |
-| Any callable                     | 654          |
-| std::bind                        | 160          |
-| Different signatures             | 1200         |
+| Type                              | Size (bytes) |
+| --------------------------------- | ------------ |
+| Embedded member (same class)      | 1008         |
+| Embedded member (different class) | 1312         |
+| Global (embedded)                 | 336          |
+| Global (non-embedded)             | 32           |
+| Any callable                      | 654          |
+| std::bind                         | 160          |
+| Different signatures              | 1200         |
 
 ### `std::function`
 
 | Type                           | Size (bytes) |
 | ------------------------------ | ------------ |
-| Member (bind, same class)      | 160          |
-| Member (bind, different class) | 52,784       |
+| Member (same class, bind)      | 160          |
+| Member (different class, bind) | 52,784       |
 | Lambda                         | 39,600       |
 | Global                         | 32           |
-| Different signature (bind)     | 58,352       |
-| Different signature (lambda)   | 1,136        |
-| Different signature (global)   | 40,272       |
+| Different signatures (bind)    | 58,352       |
+| Different signatures (lambda)  | 1,136        |
+| Different signatures (global)  | 40,272       |
 
 ---
 
-## 5. Compile time (1000 callbacks)
+## 6. Compilation time (1000 callbacks)
 
 ### `sy_callback.hpp`
 
-| Type                                                         | Time      | Binary size (bytes) |
-| ------------------------------------------------------------ | --------- | ------------------- |
-| Lambda                                                       | \~1.216 s | 1,333,528           |
-| Global (inline)                                              | \~0.194 s | 683,464             |
-| Global (non-inline)                                          | \~0.157 s | 226,824             |
-| Member (inline)                                              | \~0.665 s | 1,751,752           |
-| Member (lambda)                                              | \~1.070 s | 1,571,576           |
-| Member (bind)                                                | \~0.725 s | 363,864             |
-| Member (bind) (inline, different class, same signature)      | \~0.727 s | 2,106,376           |
-| Member (bind) (inline, different class, different signature) | \~2.051 s | 3,893,336           |
+| Type                                          | Time      | Binary size (bytes) |
+| --------------------------------------------- | --------- | ------------------- |
+| Lambda                                        | \~1.216 s | 1,333,528           |
+| Global (embedded)                             | \~0.194 s | 683,464             |
+| Global (non-embedded)                         | \~0.157 s | 226,824             |
+| Member (embedded)                             | \~0.665 s | 1,751,752           |
+| Member (lambda)                               | \~1.070 s | 1,571,576           |
+| Member (bind)                                 | \~0.725 s | 363,864             |
+| Member (different class, same signature)      | \~0.727 s | 2,106,376           |
+| Member (different class, different signature) | \~2.051 s | 3,893,336           |
 
 ### `std::function`
 
@@ -176,90 +198,8 @@ For any callable object → memory is allocated on the heap, and `object_ptr` po
 
 ---
 
-## 6. Example Usage
+## Read Document and API in here:
 
-```cpp
-#include <iostream>
-#include "sy_callback.hpp"
-
-struct MyClass {
-    void compare(int v, int u) {
-        if (v == u) std::cout << "same\n";
-        else std::cout << "not same\n";
-    }
-
-    template<typename V, typename U>
-    static int multi(V v, U u) { return v * u; }
-};
-
-template<typename R, typename V, typename U>
-static R total(V v, U u) { return v + u; }
-
-void global(int a, int b) {
-    std::cout << "global: " << a << "," << b << "\n";
-}
-
-struct Functor {
-    void operator()(int a, int b) const {
-        std::cout << "functor: " << a * b << "\n";
-    }
-};
-
-int main() {
-    MyClass my_class;
-    
-    sy_callback::callback<void(int,int)> cb_member = 
-        sy_callback::callback<void(int,int)>::make<MyClass, &MyClass::compare>(&my_class);
-    cb_member(2, 2);
-
-    sy_callback::callback<void(int,int)> cb_global = global;
-    cb_global(1, 2);
-
-    sy_callback::callback<int(int,int)> cb_total = total; 
-    std::cout << "total: " << cb_total(1, 2) << std::endl;
-
-    sy_callback::callback<int(int,int)> cb_multi_spec = MyClass::multi;
-    std::cout << "multi: " << cb_multi_spec(1, 2) << std::endl;
-
-    sy_callback::callback<void(int,int)> cb_lam = [](int a, int b){
-        std::cout << "lambda: " << a+b << "\n";
-    };
-    cb_lam(7, 8);
-
-    int x = 100;
-    sy_callback::callback<void(int,int)> cb_cap = [x](int a, int b){
-        std::cout << "lambda capture: " << a+b+x << "\n";
-    };
-    cb_cap(9, 10);
-
-    sy_callback::callback<void(int,int)> cb_functor = Functor{};
-    cb_functor(2, 3);
-
-    sy_callback::callback<void(int,int)> cb_copy = cb_functor;
-    cb_copy(3, 4);
-
-    sy_callback::callback<void(int,int)> cb_move = std::move(cb_copy);
-    cb_move(4, 5);
-
-    cb_move = global;
-    cb_move(11, 12);
-
-    cb_move = [](int a, int b){ std::cout << "assign lambda: " << a-b << "\n"; };
-    cb_move(20, 10);
-
-    cb_move = Functor{};
-    cb_move(6, 7);
-
-    sy_callback::callback<void(int,int)> cb_assign;
-    cb_assign = cb_move;
-    cb_assign(8, 9);
-
-    cb_assign = std::move(cb_lam);
-    cb_assign(10, 11);
-
-    return 0;
-}
-```
 ---
 
 Copyright © 2025 ShigamiYune
