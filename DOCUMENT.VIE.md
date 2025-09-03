@@ -354,7 +354,7 @@ int main() {
     // Nếu bạn copy callback trên đa luồng, callback sẽ không gặp vấn đề gì cả
 }
 ```
-
+--
 ### 8.2 Move
 
 ```cpp
@@ -386,7 +386,7 @@ int main() {
     // Nếu bạn move callback trên đa luồng thì sẽ có khả năng bị race coddition
 }
 ```
-
+---
 ### 8.3 isCallable() và operator bool
 
 ```cpp
@@ -418,7 +418,7 @@ int main() {
     }
 }
 ```
-
+---
 ### 8.4 swap
 
 ```cpp
@@ -446,7 +446,7 @@ int main() {
     // Nếu bạn swap callback trên đa luồng thì sẽ có khả năng bị race coddition
 }
 ```
-
+---
 ### 8.5 Assign
 
 ```
@@ -488,7 +488,7 @@ int main() {
     // Nếu bạn asiggn callback trên đa luồng thì cũng có khả năng bị race coddition
 }
 ```
-
+---
 ### 8.6 target<T>()
 
 ```cpp
@@ -551,5 +551,41 @@ int main() {
     }
 
     // Lưu ý target sẽ luôn trả về object gốc chứ không copy
+}
+```
+---
+### 8.7 reset()
+
+```cpp
+#include <iostream>
+#include "sy_callback.hpp"
+
+void global() {
+    std::cout << "Global called\n";
+};
+
+int main() {
+    sy_callback::callback<void()> cb1 = global;
+   
+    if(cb1) {
+        std::cout << "callback cb1 is callable and we call it: "; cb1();
+    }
+    else{
+        std::cout << "callback cb1 can't callable \n";
+    }
+
+    cb1.reset();
+
+    if(cb1) {
+        std::cout << "callback cb1 is callable and we call it: "; cb1();
+    }
+    else{
+        std::cout << "callback cb1 can't callable \n";
+    }
+    
+    // Lưu ý
+    // Nếu bạn reset callback trên đa luồng thì sẽ có khả năng bị race coddition
+
+    return 0;
 }
 ```
