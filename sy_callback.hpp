@@ -61,394 +61,418 @@ namespace sy_callback {
                     C
                 >::value;
         };   
-                                            struct invoke_r {
-            union {
+                                            union  invoke_r {
                 RETURN _return;
                 std::uintptr_t _object;
-            };
-        
-            invoke_r()                              : _object(0)                {}
-            invoke_r(const std::uintptr_t& object)  : _object(object)           {}
-            invoke_r(const RETURN& ret)             : _return(ret)              {}
-            invoke_r(RETURN&& ret)                  : _return(std::move(ret))   {}
         };
         enum                                struct key_t : std::uint8_t{ 
             copy, invoke, destroy, compare 
         };
+        
         using args_t            = std::tuple<ARGS&...>;
         using invoke_t          = invoke_r(*)(key_t, const std::uintptr_t&, args_t*);
 
         template<std::size_t... I>                  struct detail_invoke_table {
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) >
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) &>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const &>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile &>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile &>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) &&>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const &&>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile &&>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile &&>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
 
             static invoke_r invoke_pointer_not_noexcept(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    return (reinterpret_cast<RETURN(*)(ARGS...)>(object))(std::get<I>(*tuple_ptr)...);
-                } else {
-                    return object;
+                    _return._return = (reinterpret_cast<RETURN(*)(ARGS...)>(object))(std::get<I>(*tuple_ptr)...);
+                } 
+                else {
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
 
             template<typename ANY_T>
             static invoke_r invoke_any(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
+
                 if (key == key_t::invoke) {
-                    return (*reinterpret_cast<ANY_T*>(object))(std::get<I>(*tuple_ptr)...);
+                    _return._return = (*reinterpret_cast<ANY_T*>(object))(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::copy && std::is_copy_constructible<ANY_T>::value) {
                     ANY_T* orig = reinterpret_cast<ANY_T*>(object);
                     ANY_T* copy_obj = new ANY_T(*orig);
-                    return reinterpret_cast<std::uintptr_t>(copy_obj);
+                    _return._object = reinterpret_cast<std::uintptr_t>(copy_obj);
                 }
                 else if (key == key_t::destroy) {
                     delete reinterpret_cast<ANY_T*>(object);
                 }
-                return {};
+                return _return;
             }  
 #if __cplusplus >= 201703L
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) & noexcept> 
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const & noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile & noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile & noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) && noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const && noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile && noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile && noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
 
             static invoke_r invoke_pointer_noexcept(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
+
                 if (key == key_t::invoke) {
-                    return (reinterpret_cast<RETURN(*)(ARGS...) noexcept>(object))(std::get<I>(*tuple_ptr)...);
+                    _return._return = (reinterpret_cast<RETURN(*)(ARGS...) noexcept>(object))(std::get<I>(*tuple_ptr)...);
                 } else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
 #endif       
         };
@@ -481,7 +505,7 @@ namespace sy_callback {
 
         static invoke_r invoke_nothing(key_t key, const std::uintptr_t&, args_t*) { 
             if(key == key_t::invoke) throw std::bad_function_call();
-            return {}; 
+            return invoke_r{}; 
         }
 
         using invoke_table      = typename unpack_size<sizeof...(ARGS)>::invoke_table;
@@ -993,13 +1017,8 @@ namespace sy_callback {
                     C
                 >::value;
         };   
-                                            struct invoke_r {
-            union {
+                                            union  invoke_r {
                 std::uintptr_t _object;
-            };
-        
-            invoke_r()                              : _object(0)                {}
-            invoke_r(const std::uintptr_t& object)  : _object(object)           {}
         };
         enum                                struct key_t : std::uint8_t{ 
             copy, invoke, destroy, compare 
@@ -1010,374 +1029,404 @@ namespace sy_callback {
         template<std::size_t... I>                  struct detail_invoke_table {
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) >
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) &>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const &>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile &>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile &>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) &&>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const &&>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile &&>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile &&>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
 
             static invoke_r invoke_pointer_not_noexcept(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<void(*)(ARGS...)>(object))(std::get<I>(*tuple_ptr)...);
-                } else {
-                    return object;
+                } 
+                else {
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
 
             template<typename ANY_T>
             static invoke_r invoke_any(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
+
                 if (key == key_t::invoke) {
                     (*reinterpret_cast<ANY_T*>(object))(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::copy && std::is_copy_constructible<ANY_T>::value) {
                     ANY_T* orig = reinterpret_cast<ANY_T*>(object);
                     ANY_T* copy_obj = new ANY_T(*orig);
-                    return reinterpret_cast<std::uintptr_t>(copy_obj);
+                    _return._object = reinterpret_cast<std::uintptr_t>(copy_obj);
                 }
                 else if (key == key_t::destroy) {
                     delete reinterpret_cast<ANY_T*>(object);
                 }
-                return {};
+                return _return;
             }  
 #if __cplusplus >= 201703L
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) & noexcept> 
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const & noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile & noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile & noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) && noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const && noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile && noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
             template<typename CLASS, void(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile && noexcept>
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
-                    return std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
+                    _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
                 }
                 else {
-                    return object;
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
 
             static invoke_r invoke_pointer_noexcept(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
+                invoke_r _return{};
                 if (key == key_t::invoke) {
                     (reinterpret_cast<void(*)(ARGS...) noexcept>(object))(std::get<I>(*tuple_ptr)...);
-                } else {
-                    return object;
+                } 
+                else {
+                    _return._object = object;
                 }
-                return {};
+                return _return;
             }
 #endif       
         };
