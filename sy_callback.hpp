@@ -72,8 +72,11 @@ namespace sy_callback {
         template <typename T, typename = void>
         struct is_functor : std::false_type {};
 
+        template<typename...>
+        using my_void_t = void;
+
         template <typename T>
-        struct is_functor<T, std::__void_t<decltype(&T::operator())>> : std::true_type {};
+        struct is_functor<T, my_void_t<decltype(&T::operator())>> : std::true_type {};
 
         using func_invoke_t = RETURN(*)(const std::uintptr_t&, ARGS...);
         using func_life_t = std::uintptr_t(*)(type_key, const std::uintptr_t&);
