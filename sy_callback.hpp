@@ -73,7 +73,7 @@ namespace sy_callback {
         struct is_functor : std::false_type {};
 
         template <typename T>
-        struct is_functor<T, std::void_t<decltype(&T::operator())>> : std::true_type {};
+        struct is_functor<T, std::__void_t<decltype(&T::operator())>> : std::true_type {};
 
         using func_invoke_t = RETURN(*)(const std::uintptr_t&, ARGS...);
         using func_life_t = std::uintptr_t(*)(type_key, const std::uintptr_t&);
@@ -87,7 +87,7 @@ namespace sy_callback {
         private:
             std::uintptr_t _object;
             func_invoke_t _invoke;
-            
+
             friend class callback;
 
             target_f(const std::uintptr_t& object, func_invoke_t invoke) : _object(object), _invoke(invoke) {}
