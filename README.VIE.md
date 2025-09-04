@@ -47,11 +47,10 @@ int main() {
 
 ### `sy_callback::callback<Signature>`
 
-Một đối tượng `callback` gồm 3 thành phần chính:
+Một đối tượng `callback` gồm 2 thành phần chính:
 
 - **Pointer object (8 byte)**: lưu trữ địa chỉ object hoặc nullptr.
-- **Invoke function (static function pointer)**: gọi hàm tương ứng với signature.
-- **Life function (static function pointer)**: chịu trách nhiệm **copy / destroy** đối tượng.
+- **Invoke function (static function pointer)**: gọi hàm tương ứng với signature và chịu trách nhiệm **copy / destroy / compare** đối tượng.
 
 Sơ đồ nội bộ:
 
@@ -60,15 +59,14 @@ Sơ đồ nội bộ:
 │ sy_callback::callback<R(Args...)>                        │
 ├──────────────────────────────────────────────────────────┤
 │ object_ptr : std::uinptr_t                       (8 byte)│
-│ invoke_fn  : R(*)(std::uinptr_t, Args...)        (8 byte)│
-│ life_fn    : std::uinptr_t(*)(Op, std::uinptr_t) (8 byte)│
+│ invoke_fn  : union(*)(Op std::uinptr_t, args*)   (8 byte)│
 └──────────────────────────────────────────────────────────┘
 ```
 
-- `invoke_fn` → nhúng logic gọi hàm (lambda, global, member, functor).
+- `invoke_fn` → nhúng logic (invoke, copy, destroy, compare)
 - `life_fn` → nhúng logic quản lý vòng đời (copy / destroy).
 
-Kích thước cơ bản: **24 byte** (3 con trỏ).
+Kích thước cơ bản: 16 **byte** (2 con trỏ).
 
 Với callable bất kỳ → đối tượng được cấp phát trên heap, `object_ptr` trỏ tới vùng nhớ đó. (nếu là lambda không capture thì sẽ được lưu thành R(*)(Args...) vào object_ptr)
 
@@ -127,15 +125,15 @@ Lưu ý: Các số liệu đo được dưới đây có thể khác trên kiế
 
 | size của callable (byte) | std::function total (byte) | sy_callback total (byte) |
 | --- | --- | --- |
-| 1 | 32 | 25 |
-| 8 | 32 | 32 |
-| 16 | 32 | 40 |
-| 24 | 64 | 48 |
-| 32 | 72 | 56 |
-| 48 | 88 | 72 |
-| 56 | 96 | 80 |
-| 64 | 104 | 88 |
-| … | 32 + callable size + 8 (vptr) | 24 + callable size |
+| 1 | 32 | 17 |
+| 8 | 32 | 24 |
+| 16 | 32 | 32 |
+| 24 | 64 | 40 |
+| 32 | 72 | 48 |
+| 48 | 88 | 56 |
+| 56 | 96 | 74 |
+| 64 | 104 | 84 |
+| … | 32 + callable size + 8 (vptr) | 16 + callable size |
 
 ---
 
