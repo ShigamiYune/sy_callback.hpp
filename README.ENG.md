@@ -98,25 +98,31 @@ For any callable object → the object is **heap-allocated**, and `object_ptr` p
 
 ## 3. Performance
 
-> Note: all marked values \~ are averages and rounded from multiple clang++ -O2 compilations on macOS M1.
-> Values may differ on other architectures, OS, or compilers.
+> Note: All values marked with \~ are averages and rounded from multiple compilations using clang++ -O2 on MacOS M1.
+> Note: Measured numbers may vary on different architectures, operating systems, or compilers.
 
-### 3.1 Call time (10 million calls)
+### 3.1. Call Time (10 million calls)
 
-| Callback type              | Direct call (s) | `sy_callback` (µs) | `std::function` (µs) |
-| -------------------------- | --------------- | ------------------ | -------------------- |
-| Small capture lambda       | \~0.022         | \~0.044            | \~0.082              |
-| Member function (embedded) | \~0.022         | \~0.042            | \~0.082              |
-| Global (embedded or not)   | \~0.02          | \~0.034            | \~0.075              |
-| `std::bind`                | \~0.135         | \~0.15             | \~0.215              |
+| Callback Type                         | Direct Call (s) | `sy_callback` (s) | `std::function` (s) |
+| ------------------------------------- | --------------- | ----------------- | ------------------- |
+| Member function (inline)              | \~0.02 s        | \~0.048 s         | not applicable      |
+| Member function (lambda)              | \~0.026 s       | \~0.05 s          | \~0.085 s           |
+| Member function (`std::bind`)         | \~0.70 s        | \~0.71 s          | \~0.135 s           |
+| Lambda without capture                | \~0.02 s        | \~0.041 s         | \~0.073 s           |
+| Lambda with small capture             | \~0.02 s        | \~0.041 s         | \~0.073 s           |
+| Global function (inline & non-inline) | \~0.016 s       | \~0.041 s         | \~0.075 s           |
 
-### 3.2 Construction & destruction time (10 million)
+### 3.2. Construction & Destruction Time (10 million times)
 
-| Callback type                     | `sy_callback` (s) | `std::function` (s) |
-| --------------------------------- | ----------------- | ------------------- |
-| Small lambda (1 object)           | \~0.338           | \~0.605             |
-| Large capture lambda (int\[1000]) | \~0.9             | \~2.49              |
-| Global function                   | \~0.28            | \~1.29              |
+| Callback Type                          | `sy_callback` (s) | `std::function` (s) |
+| -------------------------------------- | ----------------- | ------------------- |
+| Lambda without capture                 | \~0.08 s          | \~0.51 s            |
+| Lambda with small capture (4 bytes)    | \~0.08 s          | \~0.51 s            |
+| Lambda with large capture (1024 bytes) | \~0.1 s           | \~1.5 s             |
+| Global function                        | \~0.06 s          | \~0.53 s            |
+| Member function                        | \~0.07 s          | \~0.54 s            |
+
+---
 
 ### 3.3 Copy, move, assign time (10 million)
 
