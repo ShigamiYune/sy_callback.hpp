@@ -378,11 +378,7 @@ int main() {
     cb1();
     // Lưu ý : 
     // bạn không nên gọi callback đã được move như cb2
-    // ------nếu bạn gọi, nó sẽ ném 1 throw bad_functional_call()-------
-    //
-    // Lưu ý:   Kể từ ngày "4/9/2025" khi bạn gọi callback đã được move như cb2 
-    //          sẽ không ném throw bad_functional_call() nữa
-    //          mà sẽ trả về 1 giá trị không hợp lệ và có thể gây UB nếu sử dụng nó       
+    // nếu bạn gọi, nó sẽ ném 1 throw bad_functional_call()
     //
     // bạn có thể kiểm tra bằng callback.isCallable()
     // 
