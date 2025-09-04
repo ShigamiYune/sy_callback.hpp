@@ -92,25 +92,29 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 ## 3. Hiệu năng
 
 > Lưu ý: tất cả giá trị đánh dấu ~ là trung bình và làm tròn từ nhiều lần biên dịch với clang++ -O2 trên MacOS M1.
-Lưu ý: Các số liệu đo được dưới đây có thể khác trên kiến trúc khác nhau, hệ điều hành khác nhau, compile khác nhau
-> 
+> Lưu ý: Các số liệu đo được dưới đây có thể khác trên kiến trúc khác nhau, hệ điều hành khác nhau, compile khác nhau
+
 
 ### 3.1. Thời gian gọi (10 triệu lần)
 
-| Loại callback | Gọi trực tiếp (s) | `sy_callback` (µs) | `std::function` (µs) |
+| Loại callback | Gọi trực tiếp (s) | `sy_callback` (s) | `std::function` (s) |
 | --- | --- | --- | --- |
-| Lambda capture nhỏ | ~0.022 s | ~0.044 s | ~0.082 s |
-| Member function (nhúng) | ~0.022 s | ~0.042 s | ~0.082 s |
-| global (nhúng và không nhúng) | ~0.02 s | ~0.034 s | ~0.075 s |
-| `std::bind` | ~0.135 s | ~0.15 s | ~0.215 s |
+| Member function (nhúng) | ~0.02 s | ~0.048 s | không có cách tương tự |
+| Member function (lambda) | ~0.026 s | ~0.05 s | ~0.085 s |
+| Member function (std::bind) | ~0.70 s | ~0.71 s | ~0.135 s |
+| Lambda không capture | ~0.02 s | ~0.041 s | ~0.073 s |
+| Lambda capture nhỏ | ~0.02 s | ~0.041 s | ~0.073 s |
+| global (nhúng và không nhúng) | ~0.016 s | ~0.041 s | ~0.075 s |
 
 ### 3.2. Thời gian khởi tạo & hủy (10 triệu lần)
 
 | Loại callback | `sy_callback` (s) | `std::function` (s) |
 | --- | --- | --- |
-| Lambda nhỏ (1 object) | ~0.338 s | ~0.605 s |
-| Lambda capture lớn (mảng int[1000]) | ~0.9 s | ~2.49 s |
-| Global function | ~0.28 s | ~1.29 s |
+| Lambda không capture | ~0.08 s | ~0.51 s |
+| Lambda capture nhỏ (4 byte) | ~0.08 s | ~0.51 s |
+| Lambda capture lớn (1024 byte) | ~0.1 s | ~1.5 s |
+| Global function | ~0.06 s | ~0.53 s |
+| member func | ~0.07 s | ~0.54 s |
 
 ## 3.3 Thời gian copy, move và assign (10 triệu lần)
 
