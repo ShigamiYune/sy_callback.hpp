@@ -45,34 +45,36 @@ int main() {
 
 ---
 
+Sure! Dưới đây là bản dịch tiếng Anh giữ nguyên ý nghĩa kỹ thuật:
+
+---
+
 ## 1. Architecture
 
 ### `sy_callback::callback<Signature>`
 
-A `callback` object consists of three main components:
+A `callback` object consists of **two main components**:
 
-* **Pointer to object (8 bytes)**: stores the object address or nullptr.
-* **Invoke function (static function pointer)**: calls the corresponding function for the signature.
-* **Life function (static function pointer)**: responsible for **copy / destroy** of the object.
+* **Object pointer (8 bytes):** stores the address of the object or `nullptr`.
+* **Invoke function (static function pointer):** calls the function matching the signature and is responsible for **copy / destroy / compare** operations on the object.
 
 Internal layout:
 
 ```cpp
-┌──────────────────────────────────────────────────────────┐
-│ sy_callback::callback<R(Args...)>                        │
-├──────────────────────────────────────────────────────────┤
-│ object_ptr : std::uintptr_t                   (8 bytes) │
-│ invoke_fn  : R(*)(std::uintptr_t, Args...)   (8 bytes) │
-│ life_fn    : std::uintptr_t(*)(Op, std::uintptr_t) (8 bytes) │
-└──────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│ sy_callback::callback<R(Args...)>                         │
+├───────────────────────────────────────────────────────────┤
+│ object_ptr : std::uintptr_t                      (8 bytes)│
+│ invoke_fn  : union(*)(Op, std::uintptr_t, args*) (8 bytes)│
+└───────────────────────────────────────────────────────────┘
 ```
 
-* `invoke_fn` → embeds the logic to call the function (lambda, global, member, functor).
-* `life_fn` → embeds object lifecycle logic (copy / destroy).
+* `invoke_fn` → contains logic for **invoke, copy, destroy, compare**.
+* `life_fn` → contains logic for **lifecycle management** (copy / destroy / compare).
 
-Base size: **24 bytes** (3 pointers).
+**Base size:** 16 **bytes** (2 pointers).
 
-For any callable → the object is heap-allocated, `object_ptr` points to it. (if it’s a lambda without capture, it is stored as `R(*)(Args...)` in `object_ptr`).
+For any callable object → the object is **heap-allocated**, and `object_ptr` points to that memory. (If it is a **lambda without capture**, it is stored as `R(*)(Args...)` directly in `object_ptr`).
 
 ---
 
@@ -125,19 +127,19 @@ For any callable → the object is heap-allocated, `object_ptr` points to it. (i
 
 ---
 
-## 4. Memory usage (64-bit)
+## 4. Memory usage ( 64 bit )
 
-| Callable size (bytes) | std::function total (bytes)   | sy\_callback total (bytes) |
-| --------------------- | ----------------------------- | -------------------------- |
-| 1                     | 32                            | 25                         |
-| 8                     | 32                            | 32                         |
-| 16                    | 32                            | 40                         |
-| 24                    | 64                            | 48                         |
-| 32                    | 72                            | 56                         |
-| 48                    | 88                            | 72                         |
-| 56                    | 96                            | 80                         |
-| 64                    | 104                           | 88                         |
-| …                     | 32 + callable size + 8 (vptr) | 24 + callable size         |
+| size of callable (byte) | std::function total (byte) | sy_callback total (byte) |
+| --- | --- | --- |
+| 1 | 32 | 17 |
+| 8 | 32 | 24 |
+| 16 | 32 | 32 |
+| 24 | 64 | 40 |
+| 32 | 72 | 48 |
+| 48 | 88 | 56 |
+| 56 | 96 | 74 |
+| 64 | 104 | 84 |
+| … | 32 + callable size + 8 (vptr) | 16 + callable size |
 
 ---
 
