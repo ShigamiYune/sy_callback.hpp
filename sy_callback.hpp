@@ -480,7 +480,7 @@ namespace sy_callback {
         };
 
         static invoke_r invoke_nothing(key_t key, const std::uintptr_t&, args_t*) { 
-            if(key != key_t::destroy) throw std::bad_function_call();
+            if(key == key_t::invoke) throw std::bad_function_call();
             return {}; 
         }
 
@@ -1409,7 +1409,7 @@ namespace sy_callback {
         };
 
         static invoke_r invoke_nothing(key_t key, const std::uintptr_t&, args_t*) { 
-            if(key != key_t::destroy) throw std::bad_function_call();
+            if(key == key_t::invoke) throw std::bad_function_call();
             return {}; 
         }
 
