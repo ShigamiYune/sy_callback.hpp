@@ -803,7 +803,7 @@ namespace sy_callback {
             typename D_ANY_T = typename std::decay<ANY_T>::type,
             typename std::enable_if<
                 !std::is_same<D_ANY_T, callback>::value &&
-                !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...) noexcept>::value &&
+                std::is_convertible<D_ANY_T, RETURN(*)(ARGS...) noexcept>::value &&
                 is_invocable_r<ANY_T>::value,
                 int
             >::type = 0
