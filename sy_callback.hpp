@@ -479,7 +479,10 @@ namespace sy_callback {
             const target_func& operator*() const { return *this; }
         };
 
-        static invoke_r invoke_nothing(key_t, const std::uintptr_t&, args_t*) { return {}; }
+        static invoke_r invoke_nothing(key_t key, const std::uintptr_t&, args_t*) { 
+            if(key != key_t::destroy) throw std::bad_function_call();
+            return {}; 
+        }
 
         using invoke_table      = typename unpack_size<sizeof...(ARGS)>::invoke_table;
 
@@ -1405,7 +1408,10 @@ namespace sy_callback {
             const target_func& operator*() const { return *this; }
         };
 
-        static invoke_r invoke_nothing(key_t, const std::uintptr_t&, args_t*) { return {}; }
+        static invoke_r invoke_nothing(key_t key, const std::uintptr_t&, args_t*) { 
+            if(key != key_t::destroy) throw std::bad_function_call();
+            return {}; 
+        }
 
         using invoke_table      = typename unpack_size<sizeof...(ARGS)>::invoke_table;
 
