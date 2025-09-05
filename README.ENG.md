@@ -49,32 +49,44 @@ Sure! Dưới đây là bản dịch tiếng Anh giữ nguyên ý nghĩa kỹ th
 
 ---
 
+Here’s the English translation of your text, keeping all the details intact:
+
+---
+
 ## 1. Architecture
 
 ### `sy_callback::callback<Signature>`
 
-A `callback` object consists of **two main components**:
+A `callback` object consists of 2 main components:
 
-* **Object pointer (8 bytes):** stores the address of the object or `nullptr`.
-* **Invoke function (static function pointer):** calls the function matching the signature and is responsible for **copy / destroy / compare** operations on the object.
+* **Pointer object (8 bytes):** stores the address of the object or `nullptr`.
+* **Invoke function (static function pointer):** calls the function corresponding to the object's signature.
+* **Life function (static function pointer):** is the function responsible for **copy / destroy**.
+* **Thunk function (static function pointer):** is the function that returns the **Invoke function** or **Life function**.
 
-Internal layout:
+Internal diagram:
 
 ```cpp
-┌───────────────────────────────────────────────────────────┐
-│ sy_callback::callback<R(Args...)>                         │
-├───────────────────────────────────────────────────────────┤
-│ object_ptr : std::uintptr_t                      (8 bytes)│
-│ invoke_fn  : union(*)(Op, std::uintptr_t, args*) (8 bytes)│
-└───────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│ sy_callback::callback<R(Args...)>            │
+├──────────────────────────────────────────────┤  ┌─────────────────────────────────────────────────┐
+│ object_ptr : std::uintptr_t          (8 byte)│  │invoke_fn :RETURN (*)(std::uintptr_t, ARGS...)   │  
+│ thunk_fn   : std::uintptr_t(*)(Op)   (8 byte)│->│life_fn   :std::uintptr_t (*)(Op, std::uintptr_t)│
+└──────────────────────────────────────────────┘  └─────────────────────────────────────────────────┘
 ```
 
-* `invoke_fn` → contains logic for **invoke, copy, destroy, compare**.
-* `life_fn` → contains logic for **lifecycle management** (copy / destroy / compare).
+* `object_ptr` → points to the object’s address.
+* `invoke_fn` → embeds the logic (invoke).
+* `life_fn` → embeds the logic (copy / destroy).
+* `thunk_fn` → returns the address of either the invoke function or the life function.
 
-**Base size:** 16 **bytes** (2 pointers).
+Basic size: 16 **bytes** (2 pointers).
 
-For any callable object → the object is **heap-allocated**, and `object_ptr` points to that memory. (If it is a **lambda without capture**, it is stored as `R(*)(Args...)` directly in `object_ptr`).
+For any callable → the object is allocated on the heap, and `object_ptr` points to that memory. (If it is a non-capturing lambda, it will be stored as `R(*)(Args...)` in `object_ptr`.)
+
+---
+
+If you want, I can also make a **slightly clearer English diagram** that reads more naturally while keeping the technical meaning exactly the same. Do you want me to do that?
 
 ---
 
