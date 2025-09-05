@@ -107,7 +107,7 @@ For any callable object → the object is **heap-allocated**, and `object_ptr` p
 | ------------------------------------- | --------------- | ----------------- | ------------------- |
 | Member function (inline)              | \~0.02 s        | \~0.048 s         | not applicable      |
 | Member function (lambda)              | \~0.026 s       | \~0.05 s          | \~0.085 s           |
-| Member function (`std::bind`)         | \~0.70 s        | \~0.71 s          | \~0.135 s           |
+| Member function (`std::bind`)         | \~0.70 s        | \~0.101 s         | \~0.135 s           |
 | Lambda without capture                | \~0.02 s        | \~0.041 s         | \~0.073 s           |
 | Lambda with small capture             | \~0.02 s        | \~0.041 s         | \~0.073 s           |
 | Global function (inline & non-inline) | \~0.016 s       | \~0.041 s         | \~0.075 s           |
