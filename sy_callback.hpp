@@ -20,7 +20,6 @@
 #ifndef SY_CALLBACK_HPP
 #define SY_CALLBACK_HPP
 
-#include <cassert>
 #include <functional>
 #include <type_traits>
 #include <typeindex>
@@ -77,7 +76,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -92,7 +92,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -107,7 +108,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -122,7 +124,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -137,7 +140,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -152,7 +156,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -167,7 +172,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -182,7 +188,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -197,7 +204,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -212,7 +220,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -227,7 +236,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -242,7 +252,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -257,7 +268,8 @@ namespace sy_callback {
             static invoke_r invoke_pointer_not_noexcept(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<RETURN(*)(ARGS...)>(object))(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<RETURN(*)(ARGS...)>(object))(std::get<I>(tuple_)...);
                 } 
                 else {
                     _return._object = object;
@@ -270,7 +282,8 @@ namespace sy_callback {
                 invoke_r _return{};
 
                 if (key == key_t::invoke) {
-                    _return._return = (*reinterpret_cast<ANY_T*>(object))(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (*reinterpret_cast<ANY_T*>(object))(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::copy && std::is_copy_constructible<ANY_T>::value) {
                     ANY_T* orig = reinterpret_cast<ANY_T*>(object);
@@ -287,7 +300,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -302,7 +316,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -317,7 +332,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -332,7 +348,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -347,7 +364,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -362,7 +380,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -377,7 +396,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -392,7 +412,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -407,7 +428,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -422,7 +444,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -437,7 +460,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -452,7 +476,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    _return._return = (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -468,7 +493,8 @@ namespace sy_callback {
                 invoke_r _return{};
 
                 if (key == key_t::invoke) {
-                    _return._return = (reinterpret_cast<RETURN(*)(ARGS...) noexcept>(object))(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;                    
+                    _return._return = (reinterpret_cast<RETURN(*)(ARGS...) noexcept>(object))(std::get<I>(tuple_)...);
                 } else {
                     _return._object = object;
                 }
@@ -1031,8 +1057,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1046,8 +1072,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1061,8 +1087,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1076,8 +1102,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1091,8 +1117,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1106,8 +1132,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1121,8 +1147,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1136,8 +1162,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1151,8 +1177,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1166,8 +1192,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1181,8 +1207,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1196,8 +1222,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1211,7 +1237,8 @@ namespace sy_callback {
             static invoke_r invoke_pointer_not_noexcept(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<void(*)(ARGS...)>(object))(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<void(*)(ARGS...)>(object))(std::get<I>(*tuple_)...);
                 } 
                 else {
                     _return._object = object;
@@ -1224,7 +1251,8 @@ namespace sy_callback {
                 invoke_r _return{};
 
                 if (key == key_t::invoke) {
-                    (*reinterpret_cast<ANY_T*>(object))(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    (*reinterpret_cast<ANY_T*>(object))(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::copy && std::is_copy_constructible<ANY_T>::value) {
                     ANY_T* orig = reinterpret_cast<ANY_T*>(object);
@@ -1241,7 +1269,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);
                 } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
@@ -1256,8 +1285,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1271,8 +1300,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1286,8 +1315,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1301,8 +1330,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1316,8 +1345,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1331,8 +1360,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1346,8 +1375,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1361,8 +1390,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1376,8 +1405,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1391,8 +1420,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1406,8 +1435,8 @@ namespace sy_callback {
             static invoke_r invoke_member(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(*tuple_ptr)...);
-                } 
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<CLASS*>(object)->*FUNC)(std::get<I>(tuple_)...);                } 
                 else if (key == key_t::compare){
                     std::type_index& type = *reinterpret_cast<std::type_index*>(object);
                     _return._object = std::uintptr_t(type == typeid(typename remove_all<CLASS>::type));
@@ -1421,7 +1450,8 @@ namespace sy_callback {
             static invoke_r invoke_pointer_noexcept(key_t key, const std::uintptr_t& object, args_t* tuple_ptr) {
                 invoke_r _return{};
                 if (key == key_t::invoke) {
-                    (reinterpret_cast<void(*)(ARGS...) noexcept>(object))(std::get<I>(*tuple_ptr)...);
+                    auto& tuple_ = *tuple_ptr;
+                    (reinterpret_cast<void(*)(ARGS...) noexcept>(object))(std::get<I>(*tuple_)...);
                 } 
                 else {
                     _return._object = object;
