@@ -50,21 +50,25 @@ int main() {
 Một đối tượng `callback` gồm 2 thành phần chính:
 
 - **Pointer object (8 byte)**: lưu trữ địa chỉ object hoặc nullptr.
-- **Invoke function (static function pointer)**: gọi hàm tương ứng với signature và chịu trách nhiệm **copy / destroy / compare** đối tượng.
+- **Invoke function (static function pointer)**: gọi hàm tương ứng với signature đối tượng.
+- **Life function** **(static function pointer):** là hàm chịu trách nhiệm **copy / destroy;**
+- **Thunk function (static function pointer):** là hàm sẽ trả về **Invoke function** hoặc **Life function**
 
 Sơ đồ nội bộ:
 
 ```cpp
-┌──────────────────────────────────────────────────────────┐
-│ sy_callback::callback<R(Args...)>                        │
-├──────────────────────────────────────────────────────────┤
-│ object_ptr : std::uinptr_t                       (8 byte)│
-│ invoke_fn  : union(*)(Op std::uinptr_t, args*)   (8 byte)│
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│ sy_callback::callback<R(Args...)>           │
+├─────────────────────────────────────────────┤   ┌───────────────────────────────────────────────┐
+│ object_ptr : std::uinptr_t          (8 byte)│   │invoke_fn :RETURN (*)(std::uinptr_t, ARGS...)  │  
+│ thunk_fn   : std::uinptr_t(*)(Op)   (8 byte)│ ->│life_fn   :std::uinptr_t (*)(Op, std::uinptr_t)│
+└─────────────────────────────────────────────┘   └───────────────────────────────────────────────┘
 ```
 
-- `invoke_fn` → nhúng logic (invoke, copy, destroy, compare)
-- `life_fn` → nhúng logic quản lý vòng đời (copy / destroy).
+- `object_ptr` → địa chỉ đến object
+- `invoke_fn` → nhúng logic (invoke)
+- `life_fn` → nhúng logic (copy / destroy)
+- `thunk_fn` → trả về địa chỉ hàm invoke hoặc hàm life
 
 Kích thước cơ bản: 16 **byte** (2 con trỏ).
 
