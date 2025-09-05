@@ -170,6 +170,55 @@ namespace sy_callback {
             return object;
         }     
 #if __cplusplus >= 201703L
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) & noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const & noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile & noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile & noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) && noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const && noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile && noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile && noexcept> 
+        static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
+            return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
+        }
+
         static RETURN invoke_global_noexcept(const std::uintptr_t& object, ARGS... args) {
             return (*reinterpret_cast<RETURN(*)(ARGS...) noexcept>(object))(args...);
         }   
