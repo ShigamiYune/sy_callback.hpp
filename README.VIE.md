@@ -101,7 +101,7 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 | --- | --- | --- | --- |
 | Member function (nhúng) | ~0.02 s | ~0.048 s | không có cách tương tự |
 | Member function (lambda) | ~0.026 s | ~0.05 s | ~0.085 s |
-| Member function (std::bind) | ~0.70 s | ~0.71 s | ~0.135 s |
+| Member function (std::bind) | ~0.70 s | ~0.101 s | ~0.135 s |
 | Lambda không capture | ~0.02 s | ~0.041 s | ~0.073 s |
 | Lambda capture nhỏ | ~0.02 s | ~0.041 s | ~0.073 s |
 | global (nhúng và không nhúng) | ~0.016 s | ~0.041 s | ~0.075 s |
