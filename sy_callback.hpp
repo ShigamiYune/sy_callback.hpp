@@ -15,25 +15,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 #ifndef SY_CALLBACK_HPP
 #define SY_CALLBACK_HPP
 
-#include <cassert>
 #include <functional>
 #include <type_traits>
+#include <typeindex>
 
 namespace sy_callback {
     template<typename SIGNATURE> class callback;
     template<typename RETURN, typename... ARGS>
     class callback<RETURN(ARGS...)> {
-        template<typename F, typename R, typename... Args>
-        struct is_invocable_r {
+        template <typename T, typename = void>  struct      is_functor : std::false_type {};
+        template<typename...>                   using       my_void_t = void;
+        template<typename T>                    struct      is_functor<T, my_void_t<decltype(&T::operator())>> : std::true_type {};
+        template<typename T>                    struct      remove_all {
+            using type = typename std::remove_cv<
+                typename std::remove_pointer<
+                    typename std::decay<T>::type
+                >::type
+            >::type;
+        };
+        template<typename F>                    struct      is_invocable_r {
         private:
             template<typename U>
             static auto test(int) -> typename std::is_convertible<
-                decltype(std::declval<U>()(std::declval<Args>()...)),
-                R
+                decltype(std::declval<U>()(std::declval<ARGS>()...)),
+                RETURN
             >::type;
 
             template<typename>
@@ -42,57 +52,30 @@ namespace sy_callback {
         public:
             static constexpr bool value = decltype(test<F>(0))::value;
         };
-
-        template<typename C, typename O>
-        struct is_valid_object {            
-            static constexpr bool value = 
-            std::is_same<
-                typename std::remove_cv<
-                    typename std::remove_pointer<
-                        typename std::decay<O>::type
-                    >::type
-                >::type, C
-            >::value;
+        template<typename C, typename O>        struct      is_valid_object {
+            static constexpr bool value =
+                std::is_same<
+                    typename remove_all<O>::type,
+                    C
+                >::value;
+        };   
+        
+        enum struct key_t : std::uint8_t{ 
+            copy, invoke, destroy, compare 
         };
         
-        template<typename C>
-        struct remove_all {
-            using type = 
-            typename std::remove_cv<
-                typename std::remove_pointer<
-                    typename std::decay<C>::type
-                >::type
-            >::type;
-        };
-
-        enum class type_key{
-            destroy, copy
-        };
-        template <typename T, typename = void>
-        struct is_functor : std::false_type {};
-
-        template<typename...>
-        using my_void_t = void;
-
-        template <typename T>
-        struct is_functor<T, my_void_t<decltype(&T::operator())>> : std::true_type {};
-
         using func_invoke_t = RETURN(*)(const std::uintptr_t&, ARGS...);
-        using func_life_t = std::uintptr_t(*)(type_key, const std::uintptr_t&);
+        using func_life_t = std::uintptr_t(*)(key_t, const std::uintptr_t&);
+        using func_thunk_t = std::uintptr_t(*)(bool);
 
-        std::uintptr_t _object;
-        func_invoke_t _invoke;    
-        func_life_t _life;
-
-        template<typename CLASS>
-        struct target_f{
+        template<typename CLASS>                struct      target_func{
         private:
             std::uintptr_t _object;
-            func_invoke_t _invoke;
+            func_thunk_t _thunk;
 
             friend class callback;
 
-            target_f(const std::uintptr_t& object, func_invoke_t invoke) : _object(object), _invoke(invoke) {}
+            target_func(const std::uintptr_t& object, func_thunk_t thunk) : _object(object), _thunk(thunk) {}
         public:
             operator bool() {
                 return _object;
@@ -100,12 +83,17 @@ namespace sy_callback {
             CLASS* operator->() {
                 return reinterpret_cast<CLASS*>(_object);
             }
-            inline RETURN operator()(ARGS... args) const { return _invoke(_object, args...); }
-            target_f& operator*() { return *this; }
-            const target_f& operator*() const { return *this; }
+            inline RETURN operator()(ARGS... args) const { 
+                return (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...); 
+            }
+            target_func& operator*() { return *this; }
+            const target_func& operator*() const { return *this; }
         };
-        
-        // INVOKE MEMBER ----------------------------------------------------------------
+
+        std::uintptr_t _object;
+        func_thunk_t _thunk;
+
+#pragma region INVOKE TABLE
         template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) > 
         static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
             return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
@@ -154,21 +142,18 @@ namespace sy_callback {
         static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
             return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
         }
-        
-        // LIFE MEMBER ------------------------------------------------------------------
-        template<typename CLASS>
-        static std::uintptr_t life_member(type_key type, const std::uintptr_t& object) {
-            return object;
-        }        
-                
-        // INVOKE GLOBAL ----------------------------------------------------------------
-        static RETURN invoke_global_not_noexcept(const std::uintptr_t& object, ARGS... args) {
+
+        static RETURN invoke_pointer_not_noexcept(const std::uintptr_t& object, ARGS... args) {
             return (*reinterpret_cast<RETURN(*)(ARGS...)>(object))(args...);
         }
-        // INVOKE LIFE ------------------------------------------------------------------
-        static std::uintptr_t life_global(type_key type, const std::uintptr_t& object) {
-            return object;
-        }     
+        
+        template<typename ANY_T>
+        static RETURN invoke_any(const std::uintptr_t& object, ARGS... args) {
+            return (*reinterpret_cast<ANY_T*>(object))(args...);
+        }
+
+        static RETURN invoke_nothing(const std::uintptr_t&, ARGS...) { throw std::bad_function_call(); }
+
 #if __cplusplus >= 201703L
         template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) noexcept> 
         static RETURN invoke_member(const std::uintptr_t& object, ARGS... args) {
@@ -219,327 +204,446 @@ namespace sy_callback {
             return (reinterpret_cast<CLASS*>(object)->*FUNC)(args...);
         }
 
-        static RETURN invoke_global_noexcept(const std::uintptr_t& object, ARGS... args) {
+        static RETURN invoke_pointer_noexcept(const std::uintptr_t& object, ARGS... args) {
             return (*reinterpret_cast<RETURN(*)(ARGS...) noexcept>(object))(args...);
-        }   
-#endif 
-        template<typename ANY_T>
-        static RETURN invoke_any(const std::uintptr_t& object, ARGS... args) {
-            return (*reinterpret_cast<ANY_T*>(object))(args...);
         }
+
+#endif
+#pragma endregion
+#pragma region LIFE TABLE
+        template<typename CLASS> 
+        static std::uintptr_t life_member(key_t type, const std::uintptr_t& object) {
+            return object;
+        }     
         template<typename ANY_T>
-        static std::uintptr_t life_any(type_key type, const std::uintptr_t& object) {    
-            if (type == type_key::copy) {
+        static std::uintptr_t life_any(key_t type, const std::uintptr_t& object) {    
+            if (type == key_t::copy) {
                 if (!std::is_copy_constructible<ANY_T>::value) return 0;
 
                 ANY_T* orig = reinterpret_cast<ANY_T*>(object);
                 ANY_T* copy_obj = new ANY_T(*orig);
                 return reinterpret_cast<std::uintptr_t>(copy_obj);
             }
-            else if (type == type_key::destroy ) delete reinterpret_cast<ANY_T*>(object);
+            else if (type == key_t::destroy ) delete reinterpret_cast<ANY_T*>(object);
             return 0;
         }
-
-        static RETURN invoke_nothing(const std::uintptr_t&, ARGS...) { throw std::bad_function_call(); }
-
-        static std::uintptr_t life_nothing(const type_key, const std::uintptr_t&) { return 0; }
+        static std::uintptr_t life_global(key_t type, const std::uintptr_t& object) {
+            return object;
+        }
+        static std::uintptr_t life_nothing(key_t type, const std::uintptr_t&) { return 0; }
+#pragma endregion
+#pragma region THUNK TABLE
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) > 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) &> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const &> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile &> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile &> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) &&> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const &&> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile &&> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile &&> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
         
+        static std::uintptr_t thunk_pointer_not_noexcept(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_pointer_not_noexcept) 
+                            : reinterpret_cast<std::uintptr_t>(&life_global);
+        }
+
+#if __cplusplus >= 201703L
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) & noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const & noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile & noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile & noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) && noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const && noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile && noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile && noexcept> 
+        static std::uintptr_t thunk_member(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_member<CLASS, FUNC>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_member<typename remove_all<CLASS>::type>);
+        } 
+
+        static std::uintptr_t thunk_pointer_noexcept(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_pointer_noexcept) 
+                            : reinterpret_cast<std::uintptr_t>(&life_global);
+        }
+
+#endif
+        template<typename ANY_T>
+        static std::uintptr_t thunk_any(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_any<ANY_T>) 
+                            : reinterpret_cast<std::uintptr_t>(&life_any<ANY_T>);
+        }
+
+        static std::uintptr_t thunk_nothing(bool invoke) {
+            return invoke   ? reinterpret_cast<std::uintptr_t>(&invoke_nothing) 
+                            : reinterpret_cast<std::uintptr_t>(&life_nothing);
+        }
+#pragma endregion
     public:
+#pragma region MAKE
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) , typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
             callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._thunk     = &thunk_member<OBJ, FUNC>;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) volatile, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const volatile, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) &, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const &, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) volatile &, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const volatile &, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) &&, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const &&, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) volatile &&, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const volatile &&, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
+            return callback;
+        }
+        
+        template<RETURN(*FUNC)(ARGS...)>
+        static callback<RETURN(ARGS...)> make() {
+            callback<RETURN(ARGS...)> callback;
+            callback._object    = reinterpret_cast<std::uintptr_t>(FUNC);
+            callback._thunk     = &thunk_pointer_not_noexcept;
+            return callback;
+        } 
+        static callback<RETURN(ARGS...)> make(RETURN(*func)(ARGS...)) {
+            callback<RETURN(ARGS...)> callback;
+            callback._object = reinterpret_cast<std::uintptr_t>(func);
+            callback._thunk = &thunk_pointer_not_noexcept;
             return callback;
         }
 
+        template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
+        static typename std::enable_if<
+            !std::is_same<D_ANY_T, callback>::value &&
+            is_invocable_r<ANY_T>::value,
+        callback<RETURN(ARGS...)>>::type make(ANY_T&& func) {
+            callback<RETURN(ARGS...)> callback;
+            callback._object    = reinterpret_cast<std::uintptr_t>(new D_ANY_T(std::forward<ANY_T>(func)));
+            callback._thunk     = &thunk_any<D_ANY_T>;
+            return callback;
+        }
+        
+        static callback<RETURN(ARGS...)> make(callback<RETURN(ARGS...)>&& func) {
+            return std::forward<callback<RETURN(ARGS...)>>(func);
+        }
 #if __cplusplus >= 201703L
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) volatile noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const volatile noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) & noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const & noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) volatile & noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const volatile & noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) && noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const && noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) volatile && noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
         template<typename CLASS, RETURN(CLASS::*FUNC)(ARGS...) const volatile && noexcept, typename OBJ>
         static typename std::enable_if<is_valid_object<CLASS, OBJ>::value, callback<RETURN(ARGS...)>>::type
         make(OBJ*&& object) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(object);
-            callback._invoke    = &invoke_member<OBJ, FUNC>;
-            callback._life      = &life_member<CLASS>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(std::forward<OBJ*>(object));
+            callback._thunk     = &thunk_member<OBJ, FUNC>;;
             return callback;
         }
-#endif
-        template<RETURN(*FUNC)(ARGS...)>
-        static callback<RETURN(ARGS...)> make() {
-            callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(FUNC);
-            callback._invoke    = &invoke_global_not_noexcept;
-            callback._life      = &life_global;
-            return callback;
-        } 
-#if __cplusplus >= 201703L
+        
         template<RETURN(*FUNC)(ARGS...) noexcept>
         static callback<RETURN(ARGS...)> make() {
             callback<RETURN(ARGS...)> callback;
             callback._object    = reinterpret_cast<std::uintptr_t>(FUNC);
-            callback._invoke    = &invoke_global_noexcept;
-            callback._life      = &life_global;
+            callback._thunk     = &thunk_pointer_noexcept;
             return callback;
-        }
-#endif
-        template<typename ANY_T>
-        static typename std::enable_if<
-            !std::is_same<typename std::decay<ANY_T>::type, callback>::value &&
-            is_invocable_r<ANY_T, RETURN, ARGS...>::value,
-        callback<RETURN(ARGS...)>>::type 
-        make(ANY_T&& func) {
-            callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(new typename std::decay<ANY_T>::type(std::forward<ANY_T>(func)));
-            callback._invoke    = &invoke_any<typename std::decay<ANY_T>::type>;
-            callback._life      = &life_any<typename std::decay<ANY_T>::type>;
-            return callback;
-        }
-
-        static callback<RETURN(ARGS...)> make(callback<RETURN(ARGS...)>&& func) {
-            return std::forward<callback<RETURN(ARGS...)>>(func);
-        }
-
-        static callback<RETURN(ARGS...)> make(RETURN(*func)(ARGS...)) {
-            callback<RETURN(ARGS...)> callback;
-            callback._object = reinterpret_cast<std::uintptr_t>(func);
-            callback._invoke = &invoke_global_not_noexcept;
-            callback._life   = &life_global;
-            return callback;
-        }
-#if __cplusplus >= 201703L
+        } 
         static callback<RETURN(ARGS...)> make(RETURN(*func)(ARGS...) noexcept) {
             callback<RETURN(ARGS...)> callback;
-            callback._object = reinterpret_cast<std::uintptr_t>(func);
-            callback._invoke = &invoke_global_noexcept;
-            callback._life   = &life_global;
+            callback._object    = reinterpret_cast<std::uintptr_t>(func);
+            callback._thunk     = &thunk_pointer_noexcept;
             return callback;
-        }  
+        }
 #endif
-        callback() noexcept : _object(0), _invoke(&invoke_nothing){}
+#pragma endregion 
+#pragma region CONSTRUCTOR
+        callback() noexcept : _object(0), _thunk(&thunk_nothing){}
         callback(const callback& other) {
-            if (other._invoke == &invoke_nothing) {
+            if (other._thunk == &thunk_nothing) {
                 _object = 0;
-                _invoke = &invoke_nothing;
+                _thunk = &thunk_nothing;
                 return;
             }
 
-            std::uintptr_t object = other._life(type_key::copy, other._object);
+            std::uintptr_t object = (*reinterpret_cast<func_life_t>(other._thunk(false)))(key_t::copy, other._object);
 
             if(!object) {
                 _object = 0;
-                _invoke = &invoke_nothing;
+                _thunk = &thunk_nothing;
                 return;
             }
 
             _object = object;
-            _invoke = other._invoke;
+            _thunk = other._thunk;
         }
         callback(callback&& other) noexcept {
             _object = other._object;
-            _invoke = other._invoke;
+            _thunk = other._thunk;
 
             other._object = 0;
-            other._invoke = &invoke_nothing;
+            other._thunk = &thunk_nothing;
         }
         template<
             typename ANY_T,
@@ -547,19 +651,17 @@ namespace sy_callback {
             typename std::enable_if<
                 !std::is_same<D_ANY_T, callback>::value &&
                 std::is_convertible<D_ANY_T, RETURN(*)(ARGS...)>::value &&
-                is_invocable_r<ANY_T, RETURN, ARGS...>::value,
+                is_invocable_r<ANY_T>::value,
                 int
             >::type = 0
         >
         callback(ANY_T&& func) {
             _object = reinterpret_cast<std::uintptr_t>(+func);
-            _invoke = &invoke_global_not_noexcept;
-            _life   = &life_global;
+            _thunk = &thunk_pointer_not_noexcept;
         }
         callback(RETURN(*func)(ARGS...)) {
             _object = reinterpret_cast<std::uintptr_t>(func);
-            _invoke = &invoke_global_not_noexcept;
-            _life   = &life_global;
+            _thunk = &thunk_pointer_not_noexcept;
         }  
 #if __cplusplus >= 201703L
         template<
@@ -568,14 +670,13 @@ namespace sy_callback {
             typename std::enable_if<
                 !std::is_same<D_ANY_T, callback>::value &&
                 std::is_convertible<D_ANY_T, RETURN(*)(ARGS...) noexcept>::value &&
-                is_invocable_r<ANY_T, RETURN, ARGS...>::value,
+                is_invocable_r<ANY_T>::value,
                 int
             >::type = 0
         >
         callback(ANY_T&& func) {
             _object = reinterpret_cast<std::uintptr_t>(+func);
-            _invoke = &invoke_global_noexcept;
-            _life   = &life_global;
+            _thunk = &thunk_pointer_noexcept;
         }
         template<
             typename ANY_T,
@@ -584,7 +685,7 @@ namespace sy_callback {
                 !std::is_same<D_ANY_T, callback>::value &&
                 !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...)>::value &&
                 !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...) noexcept>::value &&
-                is_invocable_r<ANY_T, RETURN, ARGS...>::value,
+                is_invocable_r<ANY_T>::value,
                 int
             >::type = 0
         >
@@ -592,13 +693,11 @@ namespace sy_callback {
             _object = reinterpret_cast<std::uintptr_t>(
                 new D_ANY_T(std::forward<ANY_T>(func))
             );
-            _invoke = &invoke_any<D_ANY_T>;
-            _life   = &life_any<D_ANY_T>;
+            _thunk = &thunk_any<D_ANY_T>;
         }
         callback(RETURN(*func)(ARGS...) noexcept) {
             _object = reinterpret_cast<std::uintptr_t>(func);
-            _invoke = &invoke_global_noexcept;
-            _life   = &life_global;
+            _thunk = &thunk_pointer_noexcept;
         } 
 #elif __cplusplus >= 201103L
         template<
@@ -607,7 +706,7 @@ namespace sy_callback {
             typename std::enable_if<
                 !std::is_same<D_ANY_T, callback>::value &&
                 !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...)>::value &&
-                is_invocable_r<ANY_T, RETURN, ARGS...>::value,
+                is_invocable_r<ANY_T>::value,
                 int
             >::type = 0
         >
@@ -615,47 +714,30 @@ namespace sy_callback {
             _object = reinterpret_cast<std::uintptr_t>(
                 new D_ANY_T(std::forward<ANY_T>(func))
             );
-            _invoke = &invoke_any<D_ANY_T>;
-            _life   = &life_any<D_ANY_T>;
+            _thunk = &thunk_any<D_ANY_T>;
         }
 
 #endif
         ~callback() { 
-            _life(type_key::destroy, _object);
+            if(_thunk == &thunk_nothing) return;
+
+            (*reinterpret_cast<func_life_t>(_thunk(false)))(key_t::destroy, _object);
             _object = 0;
-            _invoke = &invoke_nothing;
-            _life   = &life_nothing;
+            _thunk = &thunk_nothing;
         }
-
-        inline bool isCallable() const { return _invoke != &invoke_nothing; }
-        inline operator bool() const { return _invoke != &invoke_nothing; }
-
-        inline RETURN invoke(ARGS... args) const { return _invoke(_object, args...); }
-        inline RETURN operator()(ARGS... args) const { return _invoke(_object, args...); }
-
-        void swap(callback& other) {
-            std::swap(_object, other._object);
-            std::swap(_invoke, other._invoke);
-            std::swap(_life, other._life);
-        }
-        void reset() {
-            _life(type_key::destroy, _object);
-            _object = 0;
-            _invoke = &invoke_nothing;
-            _life = &life_nothing;
-        }
-
+#pragma endregion
+#pragma region COPY_MOVE_ASSIGN_TARGET
         template<typename ANY_T,
                 typename = typename std::enable_if<
                     std::is_pointer<ANY_T>::value &&
                     std::is_function<typename std::remove_pointer<ANY_T>::type>::value &&
-                    is_invocable_r<ANY_T, RETURN, ARGS...>::value
+                    is_invocable_r<ANY_T>::value
                 >::type>
         ANY_T target() {
-            if (_invoke == &invoke_global_not_noexcept)
+            if (_thunk == &thunk_pointer_not_noexcept)
                 return reinterpret_cast<RETURN(*)(ARGS...)>(_object);
         #if __cplusplus >= 201703L
-            else if (_invoke == &invoke_global_noexcept)
+            else if (_thunk == &thunk_pointer_noexcept)
                 return reinterpret_cast<RETURN(*)(ARGS...) noexcept>(_object);
         #endif
             return nullptr;
@@ -664,88 +746,117 @@ namespace sy_callback {
         template<typename ANY_T,
                 typename = typename std::enable_if<
                     !std::is_pointer<ANY_T>::value &&
-                    is_invocable_r<ANY_T, RETURN, ARGS...>::value
+                    is_invocable_r<ANY_T>::value
                 >::type>
         ANY_T* target() {
-            if (_invoke == &invoke_any<ANY_T>)
+            if (_thunk == &thunk_any<ANY_T>)
                 return reinterpret_cast<ANY_T*>(_object);
             return nullptr;
         }
 
         template<
             typename CLASS,
-            typename std::enable_if<std::is_class<CLASS>::value && !is_functor<CLASS>::value, int>::type = 0
+            typename std::enable_if<std::is_class<CLASS>::value && 
+            !is_functor<CLASS>::value, int>::type = 0
         >
-        target_f<typename remove_all<CLASS>::type> target() {
-            if (_life == &life_member<typename remove_all<CLASS>::type>) 
-                return target_f<typename remove_all<CLASS>::type>(_object, _invoke);
-            return target_f<typename remove_all<CLASS>::type>(0, &invoke_nothing);
+        target_func<CLASS> target() {
+            std::type_index type = typeid(typename remove_all<CLASS>::type);
+            if (&life_member<typename remove_all<CLASS>::type> == reinterpret_cast<func_life_t>(_thunk(false))) 
+                return target_func<CLASS>(_object, _thunk);
+            return target_func<CLASS>(0, &thunk_nothing);
         }
 
-        template<typename ANY_T>
+        template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
         typename std::enable_if<
-            !std::is_same<typename std::decay<ANY_T>::type, callback>::value &&
-            is_invocable_r<ANY_T, RETURN, ARGS...>::value,
+            !std::is_same<D_ANY_T, callback>::value &&
+            is_invocable_r<ANY_T>::value,
         callback&>::type
         operator=(ANY_T&& func) {
-            if (_life != &life_nothing) _life(type_key::destroy, _object);
+            if(_thunk != &thunk_nothing){
+                (*reinterpret_cast<func_life_t>(_thunk(false)))(key_t::destroy, _object);
+            }
 
-            using T = typename std::decay<ANY_T>::type;
-            _object = reinterpret_cast<std::uintptr_t>(new T(std::forward<ANY_T>(func)));
-            _invoke = &invoke_any<T>;
-            _life   = &life_any<T>;
+            _object = reinterpret_cast<std::uintptr_t>(new D_ANY_T(std::forward<ANY_T>(func)));
+            _thunk = &thunk_any<D_ANY_T>;
             return *this;
         }
 
         callback& operator=(RETURN(*func)(ARGS...)) {
-            if (_life != &life_nothing) _life(type_key::destroy, _object);
+            if(_thunk != &thunk_nothing){
+                (*reinterpret_cast<func_life_t>(_thunk(false)))(key_t::destroy, _object);
+            }
 
             _object = reinterpret_cast<std::uintptr_t>(func);
-            _invoke = &invoke_global_not_noexcept;
-            _life   = &life_global;
+            _thunk = &thunk_pointer_not_noexcept;
             return *this;
         }
 
 #if __cplusplus >= 201703L
         callback& operator=(RETURN(*func)(ARGS...) noexcept) {
-            if (_life != &life_nothing) _life(type_key::destroy, _object);
+            if(_thunk != &thunk_nothing){
+                (*reinterpret_cast<func_life_t>(_thunk(false)))(key_t::destroy, _object);
+            }
 
             _object = reinterpret_cast<std::uintptr_t>(func);
-            _invoke = &invoke_global_noexcept;
-            _life   = &life_global;
+            _thunk = &thunk_pointer_noexcept;
             return *this;
         }
 #endif
 
         callback& operator=(const callback& other) {
-            if (this == &other || other._life == &life_nothing) return *this;
+            if (this == &other || other._thunk == &thunk_nothing) return *this;
 
-            std::uintptr_t object = other._life(type_key::copy, other._object);
-            assert(object != 0 && "Callback object is not copyable!");
+            std::uintptr_t object = (*reinterpret_cast<func_life_t>(other._thunk(false)))(key_t::copy, other._object);
 
-            if(_life != &life_nothing) _life(type_key::destroy, _object);
-
+            if(!object) {
+                _object = 0;
+                _thunk = &thunk_nothing;
+                return *this;
+            }
+            
             _object = object;
-            _invoke = other._invoke;
-            _life   = other._life;
+            _thunk = other._thunk;
 
             return *this;
         }
 
         callback& operator=(callback&& other) noexcept {
             if (this != &other) {
-                _life(type_key::destroy, _object);
+                if(_thunk != &thunk_nothing){
+                    (*reinterpret_cast<func_life_t>(_thunk(false)))(key_t::destroy, _object);
+                }
 
                 _object = other._object;
-                _invoke = other._invoke;
-                _life   = other._life;
+                _thunk = other._thunk;
 
                 other._object = 0;
-                other._invoke = &invoke_nothing;
-                other._life   = &life_nothing;
+                other._thunk = &thunk_nothing;
             }
             return *this;
-        }   
+        }
+#pragma endregion
+        
+        inline bool isCallable() const { return _thunk != &thunk_nothing; }
+        inline operator bool() const { return _thunk != &thunk_nothing; }
+
+        inline RETURN invoke(ARGS... args) const { 
+            return (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        inline RETURN operator()(ARGS... args) const {
+            return (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        
+        void swap(callback& other) {
+            std::swap(_object, other._object);
+            std::swap(_thunk, other._thunk);
+        }
+        void reset() {
+            if(_thunk == &thunk_nothing) return;
+
+            (*reinterpret_cast<func_life_t>(_thunk(false)))(key_t::destroy, _object);
+            _object = 0;
+            _thunk = &thunk_nothing;
+        }
     };
 }
 #endif
