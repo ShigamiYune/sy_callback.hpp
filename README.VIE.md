@@ -121,7 +121,7 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 
 ## 3.3 Thời gian copy, move và assign (10 triệu lần)
 
-| Loại | copy (s) | move (µs) | Assign (µs) |
+| Loại | copy (s) | move (s) | Assign (s) |
 | --- | --- | --- | --- |
 | sy_callback | ~0.31 s | ~0.027 s | ~0.26 s |
 | std::function | ~0.46 s | ~0.37 s | ~1.9 s |
