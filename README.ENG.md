@@ -144,7 +144,7 @@ Here’s a full English translation of your benchmark tables, keeping all detail
 
 ### 3.3. Copy, move, and assign time (10 million times)
 
-| Type            | Copy (s) | Move (µs) | Assign (µs) |
+| Type            | Copy (s) | Move (s) | Assign (s) |
 | --------------- | -------- | --------- | ----------- |
 | `sy_callback`   | \~0.31 s | \~0.027 s | \~0.26 s    |
 | `std::function` | \~0.46 s | \~0.37 s  | \~1.9 s     |
