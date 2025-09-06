@@ -96,8 +96,7 @@ Với callable bất kỳ → đối tượng được cấp phát trên heap, `
 ## 3. Hiệu năng
 
 > Lưu ý: tất cả giá trị đánh dấu ~ là trung bình và làm tròn từ nhiều lần biên dịch với clang++ -O2 trên MacOS M1.
-Lưu ý: Các số liệu đo được dưới đây có thể khác trên kiến trúc khác nhau, hệ điều hành khác nhau, compile khác nhau
-> 
+> Lưu ý: Các số liệu đo được dưới đây có thể khác trên kiến trúc khác nhau, hệ điều hành khác nhau, compile khác nhau
 
 ### 3.1. Thời gian gọi (10 triệu lần)
 
