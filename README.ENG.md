@@ -108,25 +108,31 @@ If you want, I can also make a **slightly clearer English diagram** that reads m
 
 ---
 
+Here’s a full English translation of your benchmark tables, keeping all details intact:
+
+---
+
 ## 3. Performance
 
-> Note: All values marked with \~ are averages and rounded from multiple compilations using clang++ -O2 on MacOS M1.
-> Note: Measured numbers may vary on different architectures, operating systems, or compilers.
+> Note: all values marked with \~ are averages and rounded from multiple compilations with clang++ -O2 on MacOS M1.
+> Note: Measured numbers below may vary on different architectures, operating systems, or compilers.
 
-### 3.1. Call Time (10 million calls)
+### 3.1. Call time (10 million times)
 
-| Callback Type                         | Direct Call (s) | `sy_callback` (s) | `std::function` (s) |
-| ------------------------------------- | --------------- | ----------------- | ------------------- |
-| Member function (inline)              | \~0.02 s        | \~0.048 s         | not applicable      |
-| Member function (lambda)              | \~0.026 s       | \~0.05 s          | \~0.085 s           |
-| Member function (`std::bind`)         | \~0.70 s        | \~0.101 s         | \~0.135 s           |
-| Lambda without capture                | \~0.02 s        | \~0.041 s         | \~0.073 s           |
-| Lambda with small capture             | \~0.02 s        | \~0.041 s         | \~0.073 s           |
-| Global function (inline & non-inline) | \~0.016 s       | \~0.041 s         | \~0.075 s           |
+| Callback type                      | Direct call (s) | `sy_callback` (s) | `std::function` (s) |
+| ---------------------------------- | --------------- | ----------------- | ------------------- |
+| Member function (embedded)         | \~0.02 s        | \~0.048 s         | no similar method   |
+| Member function (lambda)           | \~0.026 s       | \~0.05 s          | \~0.085 s           |
+| Member function (`std::bind`)      | \~0.70 s        | \~0.71 s          | \~0.135 s           |
+| Lambda without capture             | \~0.02 s        | \~0.041 s         | \~0.073 s           |
+| Lambda with small capture          | \~0.02 s        | \~0.041 s         | \~0.073 s           |
+| Global (embedded and non-embedded) | \~0.016 s       | \~0.041 s         | \~0.075 s           |
 
-### 3.2. Construction & Destruction Time (10 million times)
+---
 
-| Callback Type                          | `sy_callback` (s) | `std::function` (s) |
+### 3.2. Initialization + destruction time (10 million times)
+
+| Callback type                          | `sy_callback` (s) | `std::function` (s) |
 | -------------------------------------- | ----------------- | ------------------- |
 | Lambda without capture                 | \~0.08 s          | \~0.51 s            |
 | Lambda with small capture (4 bytes)    | \~0.08 s          | \~0.51 s            |
@@ -136,106 +142,52 @@ If you want, I can also make a **slightly clearer English diagram** that reads m
 
 ---
 
-### 3.3 Copy, move, assign time (10 million)
+### 3.3. Copy, move, and assign time (10 million times)
 
-| Type          | copy (s) | move (µs) | assign (µs) |
-| ------------- | -------- | --------- | ----------- |
-| sy\_callback  | \~0.3    | \~0.037   | \~0.340     |
-| std::function | \~0.46   | \~0.45    | \~2         |
-
----
-
-## 4. Memory usage ( 64 bit )
-
-| size of callable (byte) | std::function total (byte) | sy_callback total (byte) |
-| --- | --- | --- |
-| 1 | 32 | 17 |
-| 8 | 32 | 24 |
-| 16 | 32 | 32 |
-| 24 | 64 | 40 |
-| 32 | 72 | 48 |
-| 48 | 88 | 56 |
-| 56 | 96 | 74 |
-| 64 | 104 | 84 |
-| … | 32 + callable size + 8 (vptr) | 16 + callable size |
+| Type            | Copy (s) | Move (µs) | Assign (µs) |
+| --------------- | -------- | --------- | ----------- |
+| `sy_callback`   | \~0.31 s | \~0.027 s | \~0.26 s    |
+| `std::function` | \~0.46 s | \~0.37 s  | \~1.9 s     |
 
 ---
 
-## 5. Machine code size (Codegen)
+## 4. Memory usage (64-bit)
 
-### 5.1 Base + per-signature
-
-| Library           | Base overhead (bytes) | Per-signature overhead (bytes) | Total codegen = Base + body × n |
-| ----------------- | --------------------- | ------------------------------ | ------------------------------- |
-| **sy\_callback**  | \~1,700               | \~1,000                        | 1,700 + (body × n)              |
-| **std::function** | \~140                 | \~1,000                        | 140 + (body × n)                |
-
-### 5.2 Callback type-specific (body only)
-
-#### 5.2.1 Embedded
-
-| Callback type                                  | sy\_callback (bytes) | std::function (bytes) |
-| ---------------------------------------------- | -------------------- | --------------------- |
-| Same class, same signature, embedded           | \~900                | N/A                   |
-| Different class, same signature, embedded      | \~900                | N/A                   |
-| Different class, different signature, embedded | \~2,300              | N/A                   |
-| Same class, different signature, embedded      | \~2,300              | N/A                   |
-| Global/Static same signature, embedded         | \~300                | N/A                   |
-| Global/Static different signature, embedded    | \~1,800              | N/A                   |
-
-#### 5.2.2 Bind
-
-| Callback type                              | sy\_callback (bytes) | std::function (bytes) |
-| ------------------------------------------ | -------------------- | --------------------- |
-| Same class, same signature, bind           | 0                    | 0                     |
-| Different class, same signature, bind      | \~1,000              | \~28,000              |
-| Same class, different signature, bind      | \~7,000              | \~42,000              |
-| Different class, different signature, bind | \~7,000              | \~42,000              |
-
-#### 5.2.3 Lambda
-
-| Callback type                                | sy\_callback (bytes) | std::function (bytes) |
-| -------------------------------------------- | -------------------- | --------------------- |
-| Non-capture lambda, same signature           | \~500                | \~30,000              |
-| Non-capture lambda, different signature      | \~1,800              | \~32,000              |
-| Capture lambda 8 bytes, same signature       | \~600                | \~30,000              |
-| Capture lambda 24 bytes, same signature      | \~600                | \~32,000              |
-| Capture lambda 8 bytes, different signature  | \~1,400              | \~32,000              |
-| Capture lambda 24 bytes, different signature | \~1,400              | \~34,000              |
-
-#### 5.2.4 Global / Static
-
-| Callback type       | sy\_callback (bytes)              | std::function (bytes)             |
-| ------------------- | --------------------------------- | --------------------------------- |
-| Same signature      | 96 `first time, 0 for subsequent` | 32 `first time, 0 for subsequent` |
-| Different signature | \~1,600                           | \~31,000                          |
+| Size of callable (byte) | `std::function` total (byte)  | `sy_callback` total (byte) |
+| ----------------------- | ----------------------------- | -------------------------- |
+| 1                       | 32                            | 17                         |
+| 8                       | 32                            | 24                         |
+| 16                      | 32                            | 32                         |
+| 24                      | 64                            | 40                         |
+| 32                      | 72                            | 48                         |
+| 48                      | 88                            | 56                         |
+| 56                      | 96                            | 74                         |
+| 64                      | 104                           | 84                         |
+| …                       | 32 + callable size + 8 (vptr) | 16 + callable size         |
 
 ---
 
-## 6. Compile time (1,000 callbacks)
+## 5. Compile time (1000 callbacks)
 
-### `sy_callback.hpp`
+### Unit: total size of generated machine code (bytes) / compile time, `std::function` and `sy_callback` values have subtracted the cost of base
 
-| Type                                        | Time      | Code size (bytes) |
-| ------------------------------------------- | --------- | ----------------- |
-| Lambda                                      | \~1.216 s | \~1,334,000       |
-| Global (embedded)                           | \~0.194 s | \~683,000         |
-| Global (non-embedded)                       | \~0.157 s | \~227,000         |
-| Member (embedded)                           | \~0.665 s | \~1,752,000       |
-| Member (lambda)                             | \~1.070 s | \~1,572,000       |
-| Member (bind)                               | \~0.725 s | \~364,000         |
-| Member different class, same signature      | \~0.727 s | \~2,106,000       |
-| Member different class, different signature | \~2.051 s | \~3,893,000       |
+| Type                                                                                         | base               | `std::function`         | `sy_callback`         |
+| -------------------------------------------------------------------------------------------- | ------------------ | ----------------------- | --------------------- |
+| Global same signature                                                                        | 119,416 / \~0.5 s  | \~125,000 / \~0.15 s    | \~86,000 / \~0.19 s   |
+| Global different signature                                                                   | 373,192 / \~0.5 s  | \~32,000,000 / \~48.5 s | \~3,000,000 / \~2 s   |
+| Bind member same signature, same class                                                       | 321,496 / \~0.7 s  | \~180,000 / 0.2 s       | \~103,000 / \~0.2 s   |
+| Bind member different signature, different class                                             | 6,957,208 / \~12 s | \~41,000,000 / \~248 s  | \~4,700,000 / \~3.5 s |
+| Lambda without capture, same signature, different instances                                  | 544,008 / \~0.75 s | \~30,000,000 / \~41 s   | \~770,000 / \~0.5 s   |
+| Lambda with capture, different signature, different instances (used to call member function) | 543,368 / \~0.8 s  | \~32,000,000 / \~60 s   | \~2,800,000 / \~2.2 s |
+| Embedded member same class, same signature                                                   | 235,912 / 0.5 s    | no similar method       | \~1,400,000 / \~0.7 s |
+| Embedded member different class, different signature                                         | 539,992 / \~0.8 s  | no similar method       | \~3,400,000 / \~2.2 s |
 
-### `std::function`
+---
 
-| Type                                        | Time       | Code size (bytes) |
-| ------------------------------------------- | ---------- | ----------------- |
-| Lambda                                      | \~39.501 s | \~30,023,000      |
-| Global                                      | \~0.155 s  | 263,000           |
-| Member (bind)                               | \~0.715 s  | 400,000           |
-| Member different class, same signature      | \~87.890 s | \~45,620,000      |
-| Member different class, different signature | \~92.898 s | \~49,862,000      |
+Mình đã giữ nguyên mọi chi tiết, dấu `~`, chữ “embedded”, và ghi chú về đơn vị cũng như trừ base.
+
+Nếu muốn, mình có thể làm **phiên bản biểu đồ trực quan bằng tiếng Anh** từ bảng này để thấy sự khác biệt rõ ràng giữa `sy_callback` và `std::function`.
+
 
 ---
 
