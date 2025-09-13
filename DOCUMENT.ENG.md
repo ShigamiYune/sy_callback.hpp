@@ -590,3 +590,56 @@ int main() {
     return 0;
 }
 ```
+### 8.8 invoke_prediction<T>(arg…)
+
+This is an `invoke` function but it will **execute faster** if the user’s type prediction (`T`) matches the **type of the callback that `sy_callback` is currently holding**.
+
+* When the type is correct (`T` matches), `invoke_cast` will follow the **fast path**, almost directly calling the function, similar to a **CPU branch prediction hit**.
+* When the type is wrong, `invoke_cast` must perform a runtime check and find the correct function, similar to a **CPU branch misprediction**, and thus slower.
+
+### Example illustration
+
+```cpp
+#include <iostream>
+#include "sy_callback.hpp"
+
+using namespace sy_callback;
+
+struct MyClass {
+    void member1() { std::cout << "member1 has call \n"; }
+    void member2() const { std::cout << "member2 has call \n"; }
+};
+
+void global() {
+    std::cout << "global has call \n";
+}
+
+int main() {
+    MyClass object;
+
+    auto lambda = [](){ std::cout << "lambda has call \n"; };
+
+    callback<void()> cb1 = lambda;
+    cb1.invoke_prediction<decltype(lambda)>();
+
+    callback<void()> cb2 = global;
+    cb2.invoke_prediction<void(*)()>();
+
+    callback<void()> cb3 = callback<void()>::make<MyClass, &MyClass::member1>(&object);
+    cb3.invoke_prediction<MyClass, &MyClass::member1>();
+
+    // Note:
+    // for member callbacks like cb3 if the instance object is const 
+    // then at invoke_prediction you also need to pass the class as const
+    // Example
+    const MyClass const_object;
+    callback<void()> cb4 = callback<void()>::make<MyClass, &MyClass::member2>(&const_object);
+    cb4.invoke_prediction<const MyClass, &MyClass::member2>();
+
+    // Performance information
+    // with invoke_prediction even if you guess the type correctly 
+    // it is only about 10 - 20% faster 
+    // and may increase the machine code a little bit
+    return 0;
+}
+```
