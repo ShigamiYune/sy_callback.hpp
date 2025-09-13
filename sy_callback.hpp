@@ -1,6 +1,7 @@
 /*
  * Project Name: sy_callback.hpp
  * Author: ShigamiYune
+ * Version: 1.6.1
  * Copyright 2025 ShigamiYune
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,7 +62,7 @@ namespace sy_callback {
         };   
         
         enum struct key_t : std::uint8_t{ 
-            copy, invoke, destroy, compare 
+            copy, destroy, get_name 
         };
         
         using func_invoke_t = RETURN(*)(const std::uintptr_t&, ARGS...);
@@ -493,12 +494,13 @@ namespace sy_callback {
 
         template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
         static typename std::enable_if<
-            !std::is_same<D_ANY_T, callback>::value &&
-            is_invocable_r<ANY_T>::value,
+                !std::is_same<D_ANY_T, callback>::value &&
+                std::is_convertible<D_ANY_T, RETURN(*)(ARGS...)>::value &&
+                is_invocable_r<ANY_T>::value,
         callback<RETURN(ARGS...)>>::type make(ANY_T&& func) {
             callback<RETURN(ARGS...)> callback;
-            callback._object    = reinterpret_cast<std::uintptr_t>(new D_ANY_T(std::forward<ANY_T>(func)));
-            callback._thunk     = &thunk_any<D_ANY_T>;
+            callback._object    = reinterpret_cast<std::uintptr_t>(+func);
+            callback._thunk     = &thunk_pointer_not_noexcept;
             return callback;
         }
         
@@ -614,6 +616,43 @@ namespace sy_callback {
             callback<RETURN(ARGS...)> callback;
             callback._object    = reinterpret_cast<std::uintptr_t>(func);
             callback._thunk     = &thunk_pointer_noexcept;
+            return callback;
+        }
+
+        template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
+        static typename std::enable_if<
+                !std::is_same<D_ANY_T, callback>::value &&
+                !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...)>::value &&
+                !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...) noexcept>::value &&
+                is_invocable_r<ANY_T>::value,
+        callback<RETURN(ARGS...)>>::type make(ANY_T&& func) {
+            callback<RETURN(ARGS...)> callback;
+            callback._object    = reinterpret_cast<std::uintptr_t>(new D_ANY_T(std::forward<ANY_T>(func)));
+            callback._thunk     = &thunk_any<D_ANY_T>;
+            return callback;
+        }
+
+        template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
+        static typename std::enable_if<
+                !std::is_same<D_ANY_T, callback>::value &&
+                std::is_convertible<D_ANY_T, RETURN(*)(ARGS...) noexcept>::value &&
+                is_invocable_r<ANY_T>::value,
+        callback<RETURN(ARGS...)>>::type make(ANY_T&& func) {
+            callback<RETURN(ARGS...)> callback;
+            callback._object    = reinterpret_cast<std::uintptr_t>(+func);
+            callback._thunk     = &thunk_pointer_noexcept;
+            return callback;
+        }
+#elif __cplusplus >= 201103L
+        template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
+        static typename std::enable_if<
+                !std::is_same<D_ANY_T, callback>::value &&
+                !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...)>::value &&
+                is_invocable_r<ANY_T>::value,
+        callback<RETURN(ARGS...)>>::type make(ANY_T&& func) {
+            callback<RETURN(ARGS...)> callback;
+            callback._object    = reinterpret_cast<std::uintptr_t>(new D_ANY_T(std::forward<ANY_T>(func)));
+            callback._thunk     = &thunk_any<D_ANY_T>;
             return callback;
         }
 #endif
@@ -835,7 +874,205 @@ namespace sy_callback {
             return *this;
         }
 #pragma endregion
+#pragma region INVOKE CAST
+                template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) > 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) &> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const &> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile &> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile &> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) &&> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const &&> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile &&> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile &&> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>)
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+
+        template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
+        typename std::enable_if<
+                !std::is_same<D_ANY_T, callback>::value &&
+                std::is_convertible<D_ANY_T, RETURN(*)(ARGS...)>::value &&
+                is_invocable_r<ANY_T>::value, RETURN>::type
+        invoke_prediction(ARGS... args){
+            return _thunk == &thunk_pointer_not_noexcept
+                ? (*reinterpret_cast<RETURN(*)(ARGS...)>(_object))(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+
+#if __cplusplus >= 201703L
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) & noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const & noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile & noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile & noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) && noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const && noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) volatile && noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) const volatile && noexcept> 
+        RETURN invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_member<CLASS, FUNC>) 
+                ? (reinterpret_cast<CLASS*>(_object)->*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
         
+        RETURN invoke_prediction(RETURN(*FUNC)(ARGS...) noexcept, ARGS... args){
+            return _thunk == &thunk_pointer_noexcept 
+                ? (*FUNC)(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        
+        template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
+        typename std::enable_if<
+                !std::is_same<D_ANY_T, callback>::value &&
+                std::is_convertible<D_ANY_T, RETURN(*)(ARGS...) noexcept>::value &&
+                is_invocable_r<ANY_T>::value, RETURN>::type
+        invoke_prediction(ARGS... args){
+            return _thunk == &thunk_pointer_noexcept
+                ? (*reinterpret_cast<RETURN(*)(ARGS...) noexcept>(_object))(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+        template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
+        typename std::enable_if<
+                !std::is_same<D_ANY_T, callback>::value &&
+                !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...)>::value &&
+                !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...) noexcept>::value &&
+                is_invocable_r<ANY_T>::value, RETURN>::type
+        invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_any<ANY_T>)
+                ? (*reinterpret_cast<ANY_T*>(_object))(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+#elif __cplusplus >= 201103L
+        template<typename ANY_T, typename D_ANY_T = typename std::decay<ANY_T>::type>
+        typename std::enable_if<
+                !std::is_same<D_ANY_T, callback>::value &&
+                !std::is_convertible<D_ANY_T, RETURN(*)(ARGS...)>::value &&
+                is_invocable_r<ANY_T>::value, RETURN>::type
+        invoke_prediction(ARGS... args){
+            return (_thunk == &thunk_any<ANY_T>)
+                ? (*reinterpret_cast<ANY_T*>(_object))(args...)
+                : (*reinterpret_cast<func_invoke_t>(_thunk(true)))(_object, args...);
+        }
+#endif
+#pragma endregion      
         inline bool isCallable() const { return _thunk != &thunk_nothing; }
         inline operator bool() const { return _thunk != &thunk_nothing; }
 
