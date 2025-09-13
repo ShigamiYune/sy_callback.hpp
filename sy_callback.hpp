@@ -874,7 +874,7 @@ namespace sy_callback {
             return *this;
         }
 #pragma endregion
-#pragma region INVOKE CAST
+#pragma region INVOKE PREDICTION
                 template<typename CLASS, RETURN(remove_all<CLASS>::type::*FUNC)(ARGS...) > 
         RETURN invoke_prediction(ARGS... args){
             return (_thunk == &thunk_member<CLASS, FUNC>) 
