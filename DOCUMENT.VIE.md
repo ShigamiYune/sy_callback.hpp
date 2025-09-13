@@ -589,3 +589,55 @@ int main() {
     return 0;
 }
 ```
+### 8.8 invoke_prediction<T>(arg…)
+
+Là một hàm `invoke` nhưng sẽ **thực thi nhanh hơn** nếu kiểu người dùng dự đoán đúng **kiểu (`T`) callback mà `sy_callback` đang giữ**.
+
+- Khi kiểu đúng (`T` trùng), `invoke_cast` sẽ đi theo **fast path**, gần như trực tiếp gọi hàm, tương tự **CPU dự đoán nhánh đúng (branch prediction hit)**.
+- Khi kiểu sai, `invoke_cast` phải thực hiện kiểm tra runtime và tìm đúng hàm, tương tự **CPU dự đoán nhánh sai (branch misprediction)**, nên chậm hơn.
+
+### Ví dụ minh hoạ
+
+```cpp
+#include <iostream>
+#include "sy_callback.hpp"
+
+using namespace sy_callback;
+
+struct MyClass {
+    void member1() { std::cout << "member1 has call \n"; }
+    void member2() const { std::cout << "member2 has call \n"; }
+};
+
+void global() {
+    std::cout << "global has call \n";
+}
+
+int main() {
+    MyClass object;
+
+    auto lambda = [](){ std::cout << "lambda has call \n"; };
+
+    callback<void()> cb1 = lambda;
+    cb1.invoke_prediction<decltype(lambda)>();
+
+    callback<void()> cb2 = global;
+    cb2.invoke_prediction<void(*)()>();
+
+    callback<void()> cb3 = callback<void()>::make<MyClass, &MyClass::member1>(&object);
+    cb3.invoke_prediction<MyClass, &MyClass::member1>();
+
+    // Lưu ý:
+    // đối với callback member như cb3 nếu instance object là const 
+    // thì tại invoke_prediction bạn cũng cần truyền vào class là const
+    // Ví dụ
+    const MyClass const_object;
+    callback<void()> cb4 = callback<void()>::make<MyClass, &MyClass::member2>(&const_object);
+    cb4.invoke_prediction<const MyClass, &MyClass::member2>();
+
+    // Thông tin hiệu suất
+    // với invoke_prediction dù bạn đoán đúng kiểu thì nó chỉ nhanh hơn từ 10 - 20% 
+    // và có thể tăng 1 chút mã máy
+    return 0;
+}
+```
