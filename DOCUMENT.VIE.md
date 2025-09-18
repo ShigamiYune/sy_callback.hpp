@@ -591,7 +591,7 @@ int main() {
 ```
 ### 8.8 invoke_prediction<T>(arg…)
 
-Là một hàm `invoke` nhưng sẽ **thực thi nhanh hơn** nếu kiểu người dùng dự đoán đúng **kiểu (`T`) callback mà `sy_callback` đang giữ**.
+Là một hàm `invoke` nhưng sẽ **thực thi nhanh hơn** nếu người dùng dự đoán đúng **kiểu (`T`) callback mà `sy_callback` đang giữ**.
 
 - Khi kiểu đúng (`T` trùng), `invoke_cast` sẽ đi theo **fast path**, gần như trực tiếp gọi hàm, tương tự **CPU dự đoán nhánh đúng (branch prediction hit)**.
 - Khi kiểu sai, `invoke_cast` phải thực hiện kiểm tra runtime và tìm đúng hàm, tương tự **CPU dự đoán nhánh sai (branch misprediction)**, nên chậm hơn.
